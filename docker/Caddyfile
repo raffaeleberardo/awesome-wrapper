@@ -1,0 +1,49 @@
+{
+	# Niente API di amministrazione, niente HTTPS automatico (davanti c'e' solo la 8080).
+	admin off
+	auto_https off
+	# Log di accesso NON abilitati (nessuna direttiva "log" nel sito): gli URL
+	# /api/wrapped/<username> contengono username e non devono finire nei log.
+	# Il log di runtime resta, ma senza il campo "request" (che conterrebbe l'URI).
+	log {
+		level WARN
+		output stderr
+		format filter {
+			wrap console
+			fields {
+				request delete
+			}
+		}
+	}
+}
+
+:8080 {
+	encode zstd gzip
+
+	header {
+		# 'unsafe-inline' solo per gli stili: Motion scrive style inline.
+		# img-src data:/blob: e font-src data: servono a html-to-image (export PNG);
+		# worker-src blob: al Web Worker del calendario. Gli script restano 'self' senza eccezioni.
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv
+		# Asset con hash nel nome (Vite): cache lunga e immutabile.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		# index.html e fallback SPA: sempre rivalidati.
+		@html not path /assets/*
+		header @html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

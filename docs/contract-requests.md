@@ -17,3 +17,13 @@ Formato:
 Per evitare conflitti di merge, ogni agente aggiunge le proprie voci in fondo al file.
 
 ---
+
+## A9 — Requisiti dei container sull'API (nota per A2 e A11)
+
+Nessun cambio di contratto, solo i requisiti perché `api` parta nel container hardenizzato:
+
+- Ascoltare su `0.0.0.0:3000` (non su localhost), altrimenti Caddy non la raggiunge.
+- Esporre `GET /api/health` con 200 (healthcheck con `wget` su `127.0.0.1:3000`).
+- Scrivere solo in `/tmp` (filesystem in sola lettura, utente 1000:1000, nessuna capability).
+- Leggere solo le variabili di `.env.example`; il bundle esbuild deve contenere tutte le dipendenze (nel runtime c'è solo `dist/`). Se una dipendenza non è impacchettabile va segnalato, perché l'immagine va estesa.
+- `GITLAB_CA_CERT` arriva come contenuto PEM nella variabile, non come percorso di file.

@@ -1,0 +1,15 @@
+# Contesto di build: solo sorgenti. Niente dipendenze locali, build, segreti o report.
+**/node_modules
+**/dist
+**/coverage
+.git
+.claude
+.env
+.env.*
+!.env.example
+**/*.log
+**/.vite
+e2e/report
+playwright-report
+test-results
+blob-report
