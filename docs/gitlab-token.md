@@ -68,4 +68,4 @@ Se usi questa strada, conviene un account dedicato in sola lettura piuttosto che
 ## Istanze self-hosted
 
 - **`GITLAB_URL`**: l'indirizzo della tua istanza, per esempio `https://gitlab.azienda.it`. Il default è `https://gitlab.com`.
-- **`GITLAB_CA_CERT`**: serve solo se l'istanza usa una CA aziendale non riconosciuta dal sistema. Va indicato il certificato della CA in formato PEM. Il formato esatto (contenuto del certificato o percorso del file) è spiegato in `.env.example`.
+- **`GITLAB_CA_CERT`**: serve solo se l'istanza usa una CA aziendale non riconosciuta dal sistema. Va incollato il contenuto del certificato della CA in formato PEM, tra virgolette doppie anche su più righe (esempio in `.env.example`). Un percorso di file funziona solo se monti tu il file nel container `api`.

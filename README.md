@@ -17,7 +17,7 @@ La modalità demo usa un team inventato: nessun token, nessuna configurazione.
 ## Passare ai dati reali
 
 1. Crea il file di configurazione: `cp .env.example .env`
-2. Apri `.env` e compila `GITLAB_TOKEN` (un Group Access Token con scope `read_api`) e `GITLAB_GROUP` (il percorso del gruppo, per esempio `azienda/team`). Controlla anche `DEMO_MODE`: per i dati reali deve essere `false`.
+2. Apri `.env` e compila `GITLAB_TOKEN` (un Group Access Token con scope `read_api`) e `GITLAB_GROUP` (il percorso del gruppo, per esempio `azienda/team`). Non serve toccare `DEMO_MODE`: `make up` usa sempre i dati reali, `make demo` sempre quelli finti.
 3. Avvia con `make up` e apri http://localhost:8080.
 
 Come creare il token: [docs/gitlab-token.md](docs/gitlab-token.md). Il file `.env` è escluso da Git: non committarlo.
@@ -27,7 +27,7 @@ Il calendario Outlook è facoltativo: si carica dalla pagina del calendario, ved
 ## Requisiti
 
 - **Docker** con **Docker Compose v2**. Verifica con `docker compose version`.
-- **make**. Su Windows non è incluso di default: usa WSL2 oppure installalo a parte.
+- **make**. Su Windows non è incluso di default: usa WSL2, installalo a parte, oppure lancia direttamente `docker compose up -d --build --wait` (demo) e `docker compose down` per fermare. Per i dati reali senza make metti `DEMO_MODE=false` in `.env`.
 - Solo per lo sviluppo locale senza Docker: **Node.js 22** o successivo e **pnpm 10** (la versione è fissata in `package.json`).
 
 ## Comandi del Makefile
