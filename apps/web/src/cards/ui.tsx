@@ -46,7 +46,8 @@ export function Frame({ theme, title, subtitle, children, footer }: FrameProps) 
             height: '100%',
             boxSizing: 'border-box',
             overflow: 'hidden',
-            padding: '9cqw 8cqw',
+            // In basso spazio per il bottone di export del player (overlay di A6).
+            padding: '9cqw 8cqw 15cqw',
             display: 'flex',
             flexDirection: 'column',
             gap: '4cqw',
@@ -56,7 +57,8 @@ export function Frame({ theme, title, subtitle, children, footer }: FrameProps) 
           } as CSSProperties
         }
       >
-        <header style={{ flex: '0 0 auto', minWidth: 0 }}>
+        {/* A destra spazio per i bottoni pausa/chiudi del player, sovrapposti in alto. */}
+        <header style={{ flex: '0 0 auto', minWidth: 0, paddingRight: '20cqw' }}>
           <h2
             style={{
               ...clamp(3),
