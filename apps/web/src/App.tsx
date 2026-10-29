@@ -151,11 +151,16 @@ function Oscar({ year }: { year: number }) {
 
 export function App() {
   const route = useRoute();
-  const health = useLoad((s) => api.health(s), []);
-
+  // Le rotte di sviluppo funzionano senza API: niente richiesta a /api/health.
   if (route.name === 'dev-story') return <StoryDemo />;
   if (route.name === 'dev-cards') return <CardsDemo />;
   if (route.name === 'dev-calendar') return <CalendarDemo />;
+  return <MainApp route={route} />;
+}
+
+function MainApp({ route }: { route: Exclude<Route, { name: `dev-${string}` }> }) {
+  const health = useLoad((s) => api.health(s), []);
+
   if (health.error) return <ErrorView message={health.error} onRetry={health.retry} />;
   if (!health.data) return <Loading />;
 
