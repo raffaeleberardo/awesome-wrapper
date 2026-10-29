@@ -1,0 +1,2 @@
+# I dati generati si leggono byte per byte (CRLF nel .ics): niente conversione di fine riga.
+* -text
