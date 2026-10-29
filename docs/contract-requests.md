@@ -54,3 +54,13 @@ Per evitare conflitti di merge, ogni agente aggiunge le proprie voci in fondo al
 - **Cosa**: aggiungere a `UI_KEYS` (e a `packages/copy`) le etichette dei numeri delle card: commit, righe aggiunte/cancellate, MR, approvazioni, note, pipeline, deploy, giorni, review, emoji, riunioni, ore, ecc.
 - **Perché**: le card usano oggi etichette tecniche scritte a mano (`commit`, `MR`, `righe +`, `approvazioni`...) perché il catalogo non le prevede; per coerenza di tono e lingua andrebbero in `copy.ui`.
 - **Stub adottato nel frattempo**: etichette brevi nel codice di `apps/web/src/cards/specs.tsx`; il nome dei giorni e le date vengono da `Intl` (it-IT). Il campo `placeholder`/`aria-label` "Cerca" della ricerca membri è scritto a mano per lo stesso motivo.
+
+## A9 — Requisiti dei container sull'API (nota per A2 e A11)
+
+Nessun cambio di contratto, solo i requisiti perché `api` parta nel container hardenizzato:
+
+- Ascoltare su `0.0.0.0:3000` (non su localhost), altrimenti Caddy non la raggiunge.
+- Esporre `GET /api/health` con 200 (healthcheck con `wget` su `127.0.0.1:3000`).
+- Scrivere solo in `/tmp` (filesystem in sola lettura, utente 1000:1000, nessuna capability).
+- Leggere solo le variabili di `.env.example`; il bundle esbuild deve contenere tutte le dipendenze (nel runtime c'è solo `dist/`). Se una dipendenza non è impacchettabile va segnalato, perché l'immagine va estesa.
+- `GITLAB_CA_CERT` arriva come contenuto PEM nella variabile, non come percorso di file.
