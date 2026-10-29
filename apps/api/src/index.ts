@@ -18,13 +18,18 @@ async function main(): Promise<void> {
   }
 
   const source = config.demoMode
-    ? createDemoSource()
-    : createGitLabSource({
-        url: config.gitlabUrl,
-        token: config.gitlabToken,
-        group: config.gitlabGroup,
-        ...(config.gitlabCaCert ? { caCert: config.gitlabCaCert } : {}),
-      });
+    ? createDemoSource(undefined, config.timezone)
+    : createGitLabSource(
+        {
+          url: config.gitlabUrl,
+          token: config.gitlabToken,
+          group: config.gitlabGroup,
+          ...(config.gitlabCaCert ? { caCert: config.gitlabCaCert } : {}),
+        },
+        // Le cache interne del collettore scadono come quella delle statistiche: un solo
+        // parametro (CACHE_TTL_MINUTES) decide quanto restano in RAM i dati di GitLab.
+        { cacheTtlMs: config.cacheTtlMinutes * 60_000, timeZone: config.timezone },
+      );
 
   const app = buildServer({ source, config, logger });
 

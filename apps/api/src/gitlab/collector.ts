@@ -30,7 +30,10 @@ import { marginWindow, toIso, yearInZone } from './time';
 export interface GitLabSourceOptions extends ClientOptions {
   /** Fuso per decidere l'anno di un istante (default `process.env.TZ` o `Europe/Rome`). */
   timeZone?: string;
-  /** Durata delle cache interne (membri, progetti, commit del progetto). Default 5 minuti. */
+  /**
+   * Durata delle cache interne (membri, progetti, commit del progetto). Default 5 minuti;
+   * `src/index.ts` la allinea a `CACHE_TTL_MINUTES`.
+   */
   cacheTtlMs?: number;
   /** Progetti elaborati in parallelo (default 4). */
   projectConcurrency?: number;
@@ -432,8 +435,11 @@ export function createCollector(
     // --- commit dell'utente
     // Euristica: un commit è dell'utente se l'email dell'autore coincide con l'email pubblica/di
     // commit del profilo o con l'indirizzo noreply di GitLab (`<id>-<username>@users.noreply.<host>`),
-    // oppure se il nome autore coincide (senza maiuscole) con username o nome visualizzato.
-    // Può sbagliare con nomi omonimi o email non collegate al profilo.
+    // oppure se il nome autore coincide (senza maiuscole) con username o nome visualizzato,
+    // oppure se la parte locale dell'email è lo username (`mario.rossi@azienda.it`): con un
+    // token di gruppo `commit_email` non è visibile e le email aziendali seguono spesso lo username.
+    // Può sbagliare con nomi omonimi o email non collegate al profilo; le email servono solo al
+    // confronto e non escono dal collettore.
     const emails = new Set(
       [userInfo?.public_email, userInfo?.commit_email]
         .filter((e): e is string => !!e)
@@ -448,9 +454,11 @@ export function createCollector(
         (!m[1] || Number(m[1]) === me.id)
       );
     };
+    const localPart = (email: string) => email.toLowerCase().split('@')[0] ?? '';
     const isMine = (c: SlimCommit) =>
       emails.has(c.authorEmail.toLowerCase()) ||
       noreply(c.authorEmail) ||
+      (c.authorEmail.includes('@') && localPart(c.authorEmail) === me.username.toLowerCase()) ||
       names.has(c.authorName.trim().toLowerCase());
 
     const mineByProject: Array<{ project: ApiProject; commits: SlimCommit[] }> = [];

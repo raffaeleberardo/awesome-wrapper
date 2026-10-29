@@ -118,6 +118,26 @@ function world(url: URL): Response | object | null {
         stats: { additions: 1, deletions: 1 },
       },
       {
+        // email aziendale con la parte locale uguale allo username: è di Ada
+        id: 'c5'.repeat(20),
+        message: "Merge branch 'y'",
+        author_name: 'A. F.',
+        author_email: 'Ada@azienda.test',
+        authored_date: '2026-06-01T10:00:00Z',
+        parent_ids: ['p1', 'p2'],
+        stats: { additions: 0, deletions: 0 },
+      },
+      {
+        // parte locale che inizia come lo username ma non coincide: non è di Ada
+        id: 'c6'.repeat(20),
+        message: "Merge branch 'z'",
+        author_name: 'Adamo',
+        author_email: 'adamo@azienda.test',
+        authored_date: '2026-06-02T10:00:00Z',
+        parent_ids: ['p1', 'p2'],
+        stats: { additions: 0, deletions: 0 },
+      },
+      {
         id: 'c4'.repeat(20),
         message: 'chore: di Bruno',
         author_name: 'Bruno Inventato',
@@ -367,7 +387,7 @@ describe('GitLab source', () => {
     const a = act!;
 
     // commit: filtro per autore (email e nome) e per anno esatto, merge senza diff
-    expect(a.commits.map((c) => c.sha.slice(0, 2))).toEqual(['c1', 'c2']);
+    expect(a.commits.map((c) => c.sha.slice(0, 2))).toEqual(['c1', 'c2', 'c5']);
     const c1 = a.commits[0]!;
     expect(c1).toMatchObject({
       additions: 12,

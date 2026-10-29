@@ -44,7 +44,10 @@ const int = (key: string, fallback: number, min: number, max: number) =>
     if (v === undefined) return fallback;
     const value = Number(v);
     if (!Number.isInteger(value) || value < min || value > max) {
-      ctx.addIssue({ code: 'custom', message: `${key} deve essere un intero tra ${min} e ${max}.` });
+      ctx.addIssue({
+        code: 'custom',
+        message: `${key} deve essere un intero tra ${min} e ${max}.`,
+      });
       return z.NEVER;
     }
     return value;
