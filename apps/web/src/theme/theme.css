@@ -1,16 +1,84 @@
-/* Tema di Git Wrapped (A6). Stub di A0: solo i font self-hosted e lo sfondo. */
+/* Tema di Git Wrapped (A6): font self-hosted, superfici delle card, player a storie. */
 @import '@fontsource-variable/bricolage-grotesque';
 @import '@fontsource-variable/inter';
 
 @theme {
   --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
   --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --color-stage: #07070d;
 }
 
 html,
 body,
 #root {
   height: 100%;
-  background: #0b0b12;
+  background: var(--color-stage);
   color: #fff;
+  font-family: var(--font-sans);
+}
+
+/* Superficie di una card: unità cqw relative alla card, testo nel colore del tema. */
+.gw-surface {
+  container-type: inline-size;
+  font-family: var(--font-sans);
+  color: var(--card-fg);
+  overflow: hidden;
+}
+
+/* Player a storie */
+.gw-story {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gw-story-backdrop {
+  background:
+    radial-gradient(60% 50% at 15% 20%, var(--stage-accent) 0%, transparent 70%),
+    radial-gradient(70% 60% at 85% 85%, var(--stage-bg) 0%, transparent 75%), var(--color-stage);
+  opacity: 0.55;
+  transition: background 600ms ease;
+}
+
+.gw-tap-area {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.gw-progress-fill {
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation-name: gw-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.gw-progress-fill[data-state='done'] {
+  animation: none;
+  transform: scaleX(1);
+}
+
+.gw-progress-fill[data-state='todo'] {
+  animation: none;
+  transform: scaleX(0);
+}
+
+@keyframes gw-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Focus sempre visibile: doppio anello bianco/nero, leggibile su qualsiasi palette. */
+.gw-control:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px #000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gw-story *,
+  .gw-story-backdrop {
+    transition: none !important;
+  }
 }
