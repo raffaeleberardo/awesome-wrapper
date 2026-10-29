@@ -1,6 +1,6 @@
 # Richieste di modifica ai contratti
 
-I contratti sono congelati a `contracts-v1`. Se ti serve un cambiamento (contratti, interfacce
+I contratti sono congelati a `contracts-v2`. Se ti serve un cambiamento (contratti, interfacce
 congelate, nuove dipendenze npm), aggiungi una voce qui sotto e continua con uno stub.
 Decide A11 in Fase 2.
 

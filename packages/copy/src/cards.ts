@@ -28,7 +28,10 @@ export const cards: CopyCatalog['cards'] = {
     title: 'I tuoi badge',
     subtitle: '{value} riconoscimenti, tutti conquistati sul campo.',
   },
-  personality: { title: 'La tua personalità', subtitle: 'Il ritratto di {name} da sviluppatore.' },
+  personality: {
+    title: 'La tua personalità',
+    subtitle: 'Il ritratto di {name} davanti al codice.',
+  },
   horoscope: { title: 'Oroscopo {year}', subtitle: 'Le stelle hanno letto il tuo log.' },
   summary: { title: 'Il riepilogo', subtitle: 'Il tuo {year}, tutto in una card.' },
 };

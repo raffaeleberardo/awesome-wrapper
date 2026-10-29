@@ -7,7 +7,8 @@ export const awards: CopyCatalog['awards'] = {
   },
   night_shift: {
     title: 'Premio alla carriera per il turno di notte',
-    description: '{winner} ha firmato il commit più tardo dell’anno. Le stelle facevano il tifo.',
+    description:
+      '{winner} ha firmato il commit più tardo dell’anno, alle {detail}. Le stelle tifavano.',
   },
   pipeline_phoenix: {
     title: 'Miglior resurrezione in una pipeline',
@@ -19,7 +20,7 @@ export const awards: CopyCatalog['awards'] = {
   },
   marathon_mr: {
     title: 'Premio alla carriera per la MR più longeva',
-    description: 'La MR di {winner} è aperta da {value} giorni. Un’opera ancora in lavorazione.',
+    description: 'La MR di {winner} è rimasta aperta {value} giorni. Un’opera in più atti.',
   },
   hemingway: {
     title: 'Premio Hemingway per la sintesi',
@@ -41,6 +42,6 @@ export const awards: CopyCatalog['awards'] = {
   first_light: {
     title: 'Miglior fotografia alle prime luci',
     description:
-      '{winner} ha firmato il primo commit dell’anno, con la rugiada ancora sul monitor.',
+      '{winner} ha firmato il commit più mattiniero dell’anno, alle {detail}. C’era la rugiada.',
   },
 };
