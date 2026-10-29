@@ -2,6 +2,10 @@ node_modules/
 dist/
 coverage/
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 *.log
 playwright-report/
 test-results/

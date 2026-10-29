@@ -526,7 +526,7 @@ export function createCollector(
     // Euristica: un commit è dell'utente se l'email dell'autore coincide con l'email pubblica/di
     // commit del profilo o con l'indirizzo noreply di GitLab (`<id>-<username>@users.noreply.<host>`),
     // oppure se il nome autore coincide (senza maiuscole) con username o nome visualizzato,
-    // oppure se la parte locale dell'email è lo username (`mario.rossi@azienda.it`): con un
+    // oppure se la parte locale dell'email è lo username (`mario.rossi@azienda.test`): con un
     // token di gruppo `commit_email` non è visibile e le email aziendali seguono spesso lo username.
     // Può sbagliare con nomi omonimi o email non collegate al profilo; le email servono solo al
     // confronto e non escono dal collettore.
