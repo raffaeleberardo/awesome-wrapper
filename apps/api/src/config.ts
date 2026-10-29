@@ -75,7 +75,7 @@ const timezone = optional.transform((v, ctx) => {
 
 /**
  * Schema dell'ambiente. I messaggi d'errore non contengono mai i valori (token compreso).
- * Con `DEMO_MODE=false` token e gruppo sono obbligatori.
+ * Con `DEMO_MODE=false` il token è obbligatorio; senza gruppo si leggono tutti i gruppi del token.
  */
 const envSchema = z
   .object({
@@ -89,19 +89,13 @@ const envSchema = z
     GITLAB_CA_CERT: optional,
   })
   .superRefine((env, ctx) => {
-    if (env.DEMO_MODE) return;
-    const missing = [
-      env.GITLAB_TOKEN ? null : 'GITLAB_TOKEN',
-      env.GITLAB_GROUP ? null : 'GITLAB_GROUP',
-    ].filter((k): k is string => k !== null);
-    if (missing.length > 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message:
-          `Con DEMO_MODE=false servono anche: ${missing.join(', ')}. ` +
-          'Impostali nel file .env oppure usa DEMO_MODE=true.',
-      });
-    }
+    if (env.DEMO_MODE || env.GITLAB_TOKEN) return;
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'Con DEMO_MODE=false serve anche: GITLAB_TOKEN. ' +
+        'Impostalo nel file .env oppure usa DEMO_MODE=true.',
+    });
   });
 
 /**

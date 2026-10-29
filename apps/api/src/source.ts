@@ -15,7 +15,7 @@ export interface GitLabSourceConfig {
   /** Es. `https://gitlab.com`. */
   url: string;
   token: string;
-  /** Percorso del gruppo, es. `azienda/team`. */
+  /** Percorso del gruppo, es. `azienda/team`. Vuoto: tutti i gruppi di cui il token è membro. */
   group: string;
   /** Contenuto PEM di una CA aziendale, se serve. */
   caCert?: string;

@@ -46,6 +46,11 @@ export class HttpStatusError extends Error {
   }
 }
 
+/** 404 o 403: la risorsa non c'è o il ruolo del token non permette di vederla. */
+export function isMissing(e: unknown): e is HttpStatusError {
+  return e instanceof HttpStatusError && (e.status === 404 || e.status === 403);
+}
+
 export class GitLabClient {
   private readonly base: URL;
   private readonly retry: RetryOptions;
@@ -82,12 +87,12 @@ export class GitLabClient {
     return this.fetchJson<T>(url);
   }
 
-  /** Come `get` ma ritorna `null` su 404 (risorsa assente o funzione non disponibile). */
+  /** Come `get` ma ritorna `null` su 404/403 (risorsa assente, funzione non disponibile o non accessibile col ruolo del token). */
   async getOrNull<T>(path: string, query: Query = {}): Promise<T | null> {
     try {
       return (await this.get<T>(path, query)).data;
     } catch (e) {
-      if (e instanceof HttpStatusError && e.status === 404) return null;
+      if (isMissing(e)) return null;
       throw e;
     }
   }
@@ -110,12 +115,12 @@ export class GitLabClient {
     return out;
   }
 
-  /** Come `getAll` ma ritorna `[]` su 404. */
+  /** Come `getAll` ma ritorna `[]` su 404/403. */
   async getAllOrEmpty<T>(path: string, query: Query = {}, maxPages = Infinity): Promise<T[]> {
     try {
       return await this.getAll<T>(path, query, maxPages);
     } catch (e) {
-      if (e instanceof HttpStatusError && e.status === 404) return [];
+      if (isMissing(e)) return [];
       throw e;
     }
   }
@@ -163,7 +168,8 @@ export class GitLabClient {
           throw new SourceError('upstream_error', 'Risposta GitLab non valida');
         }
       }
-      if (status === 401 || status === 403) {
+      // 403 con un token valido vuol dire "non accessibile col tuo ruolo": lo decide il chiamante
+      if (status === 401) {
         throw new SourceError('unauthorized', 'Accesso a GitLab non autorizzato');
       }
       const retriable = !res || status === 429 || status >= 500;

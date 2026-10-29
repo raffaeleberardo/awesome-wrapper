@@ -190,16 +190,16 @@ services:
 
 **Variabili d'ambiente** (`.env.example`)
 
-| Variabile           | Default              | Uso                                                        |
-| ------------------- | -------------------- | ---------------------------------------------------------- |
-| `DEMO_MODE`         | `true`               | Usa i dati finti; diventa `false` quando si mette il token |
-| `GITLAB_URL`        | `https://gitlab.com` | Istanza GitLab, anche self-hosted                          |
-| `GITLAB_TOKEN`      | vuoto                | Group Access Token con scope `read_api`                    |
-| `GITLAB_GROUP`      | vuoto                | Percorso del gruppo, per esempio `azienda/team`            |
-| `WRAPPED_YEAR`      | `2026`               | Anno raccontato                                            |
-| `TZ`                | `Europe/Rome`        | Fuso per orari e badge notturni                            |
-| `CACHE_TTL_MINUTES` | `15`                 | Durata della cache in memoria                              |
-| `GITLAB_CA_CERT`    | vuoto                | Certificato per istanze interne con CA aziendale           |
+| Variabile           | Default              | Uso                                                                       |
+| ------------------- | -------------------- | ------------------------------------------------------------------------- |
+| `DEMO_MODE`         | `true`               | Usa i dati finti; diventa `false` quando si mette il token                |
+| `GITLAB_URL`        | `https://gitlab.com` | Istanza GitLab, anche self-hosted                                         |
+| `GITLAB_TOKEN`      | vuoto                | Group Access Token con scope `read_api`                                   |
+| `GITLAB_GROUP`      | vuoto                | Percorso del gruppo, es. `azienda/team`; vuoto = tutti i gruppi del token |
+| `WRAPPED_YEAR`      | `2026`               | Anno raccontato                                                           |
+| `TZ`                | `Europe/Rome`        | Fuso per orari e badge notturni                                           |
+| `CACHE_TTL_MINUTES` | `15`                 | Durata della cache in memoria                                             |
+| `GITLAB_CA_CERT`    | vuoto                | Certificato per istanze interne con CA aziendale                          |
 
 **Comandi del `Makefile`**
 

@@ -283,6 +283,7 @@ function world(url: URL): Response | object | null {
 describe('GitLab source', () => {
   it('elenca i membri escludendo bot e bloccati, con paginazione su più pagine', async () => {
     route = (url) => {
+      if (!url.pathname.endsWith('/members/all')) return null;
       const page = Number(url.searchParams.get('page') ?? '1');
       if (page === 1) {
         return new Response(JSON.stringify([members[0], members[2]]), {
@@ -299,7 +300,33 @@ describe('GitLab source', () => {
     const src = createGitLabSource(config, fast);
     const list = await src.listMembers();
     expect(list.map((m) => m.username)).toEqual(['ada', 'bruno']);
-    expect(requests).toHaveLength(2);
+    expect(requests.filter((r) => r.includes('/members/all'))).toHaveLength(2);
+  });
+
+  it('il proprietario del token è sempre tra i membri, anche se un gruppo risponde 403', async () => {
+    route = (url) => {
+      const p = decodeURIComponent(url.pathname.replace('/api/v4', ''));
+      if (p === '/user') return { id: 7, username: 'io', name: 'Io Finto', state: 'active' };
+      if (p === '/groups')
+        return [
+          { id: 1, full_path: 'acme/team' },
+          { id: 2, full_path: 'chiuso' },
+        ];
+      if (p === '/groups/chiuso/members/all') return new Response(null, { status: 403 });
+      if (p === '/groups/acme/team/members/all') return [members[0]];
+      return null;
+    };
+    const src = createGitLabSource({ ...config, group: '' }, fast);
+    expect((await src.listMembers()).map((m) => m.username)).toEqual(['ada', 'io']);
+  });
+
+  it('con un gruppo impostato un 403 resta un errore', async () => {
+    route = (url) =>
+      url.pathname.endsWith('/members/all') ? new Response(null, { status: 403 }) : null;
+    const err = await createGitLabSource(config, fast)
+      .listMembers()
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SourceError);
   });
 
   it('segue la paginazione keyset via header Link', async () => {
@@ -328,7 +355,8 @@ describe('GitLab source', () => {
 
   it('ritenta su 429 rispettando Retry-After e poi riesce', async () => {
     let calls = 0;
-    route = () => {
+    route = (url) => {
+      if (url.pathname.endsWith('/user')) return null;
       calls++;
       if (calls === 1) return new Response('{}', { status: 429, headers: { 'retry-after': '3' } });
       return members;
@@ -341,7 +369,7 @@ describe('GitLab source', () => {
   });
 
   it('429 persistente produce SourceError rate_limited senza token né username', async () => {
-    route = () => new Response('{}', { status: 429 });
+    route = (url) => (url.pathname.endsWith('/user') ? null : new Response('{}', { status: 429 }));
     sleeps.length = 0;
     const err = await createGitLabSource(config, fast)
       .listMembers()
@@ -367,6 +395,13 @@ describe('GitLab source', () => {
     expect((e2 as SourceError).code).toBe('unauthorized');
   });
 
+  it('un 403 su un progetto (ruolo Guest) non blocca le statistiche', async () => {
+    route = (url) =>
+      url.pathname.includes('/projects/11/') ? new Response('{}', { status: 403 }) : world(url);
+    const act = await createGitLabSource(config, fast).getActivity('ada', 2026);
+    expect(rawActivitySchema.safeParse(act).success).toBe(true);
+  });
+
   it('un 4xx imprevisto diventa upstream_error, non un errore generico', async () => {
     route = (url) =>
       url.pathname.endsWith('/events') ? new Response('{}', { status: 400 }) : world(url);
@@ -375,6 +410,36 @@ describe('GitLab source', () => {
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(SourceError);
     expect((err as SourceError).code).toBe('upstream_error');
+  });
+
+  it('senza gruppo legge tutti i gruppi del token, senza duplicati', async () => {
+    route = (url) => {
+      const p = decodeURIComponent(url.pathname.replace('/api/v4', ''));
+      if (p === '/groups') {
+        expect(url.searchParams.get('min_access_level')).toBe('10');
+        return [
+          { id: 1, full_path: 'acme/team' },
+          { id: 2, full_path: 'acme/team/sub' },
+          { id: 3, full_path: 'altro' },
+        ];
+      }
+      if (p === '/groups/acme/team/members/all') return [members[0], members[1]];
+      if (p === '/groups/acme/team/sub/members/all') return [members[0]];
+      if (p === '/groups/altro/members/all')
+        return [{ id: 5, username: 'dario', name: 'Dario Finto', state: 'active' }];
+      if (p === '/groups/acme/team/projects') return projects;
+      if (p === '/groups/acme/team/sub/projects') throw new Error('sottogruppo già incluso');
+      if (p.startsWith('/groups/altro/')) return [];
+      return world(url);
+    };
+    const src = createGitLabSource({ ...config, group: '' }, fast);
+    expect((await src.listMembers()).map((m) => m.username)).toEqual(['ada', 'bruno', 'dario']);
+    const act = await src.getActivity('ada', 2026);
+    expect(rawActivitySchema.safeParse(act).success).toBe(true);
+    expect(act?.projects.map((p) => p.id)).toEqual([10, 11, 12]);
+    expect(requests.some((r) => r.startsWith('/api/v4/groups/acme%2Fteam%2Fsub/projects'))).toBe(
+      false,
+    );
   });
 
   it('utente non membro (o bot) -> null', async () => {

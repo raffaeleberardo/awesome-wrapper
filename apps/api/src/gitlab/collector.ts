@@ -16,7 +16,7 @@ import type {
 } from '@git-wrapped/contracts';
 import { SourceError } from '../source';
 import type { ActivitySource, GitLabSourceConfig } from '../source';
-import { GitLabClient, HttpStatusError, mapLimit } from './http';
+import { GitLabClient, HttpStatusError, isMissing, mapLimit } from './http';
 import type { ClientOptions } from './http';
 import { marginWindow, toIso, yearInZone } from './time';
 
@@ -47,6 +47,10 @@ interface ApiMember {
   name?: string;
   state?: string;
   bot?: boolean;
+}
+interface ApiGroup {
+  id: number;
+  full_path: string;
 }
 interface ApiProject {
   id: number;
@@ -181,8 +185,7 @@ export function createCollector(
   const timeZone = options.timeZone ?? process.env['TZ'] ?? 'Europe/Rome';
   const ttl = options.cacheTtlMs ?? 5 * 60_000;
   const projectConcurrency = options.projectConcurrency ?? 4;
-  const group = encodeURIComponent(config.group);
-
+  const groupsCache = new TtlCache<{ all: string[]; roots: string[] }>(ttl);
   const membersCache = new TtlCache<MemberInfo[]>(ttl);
   const projectsCache = new TtlCache<ApiProject[]>(ttl);
   const languagesCache = new TtlCache<Record<string, number>>(ttl);
@@ -192,11 +195,72 @@ export function createCollector(
   const inYear = (iso: string | null, year: number): iso is string =>
     iso !== null && yearInZone(iso, timeZone) === year;
 
+  // --- gruppi -------------------------------------------------------------------------------
+
+  /**
+   * Gruppi da leggere, già codificati per l'URL. Con `group` impostato è solo quello; altrimenti
+   * tutti i gruppi in cui il token è almeno Guest. `roots` esclude i sottogruppi di gruppi già
+   * in elenco: progetti, MR e issue si leggono con i sottogruppi inclusi.
+   */
+  const loadGroups = () =>
+    groupsCache.get('groups', async () => {
+      if (config.group) {
+        const g = encodeURIComponent(config.group);
+        return { all: [g], roots: [g] };
+      }
+      const raw = await client.getAll<ApiGroup>('/groups', {
+        min_access_level: 10,
+        order_by: 'id',
+        sort: 'asc',
+      });
+      const paths = [...new Set(raw.map((g) => g.full_path))];
+      const roots = paths.filter((p) => !paths.some((o) => p.startsWith(`${o}/`)));
+      return { all: paths.map(encodeURIComponent), roots: roots.map(encodeURIComponent) };
+    });
+
+  /**
+   * Unisce le liste lette da più gruppi togliendo i duplicati per chiave. Senza `group` impostato
+   * un gruppo che risponde 403/404 (membri nascosti, accesso solo Guest) si salta: non deve
+   * impedire di leggere gli altri.
+   */
+  const fromGroups = async <T>(
+    groups: string[],
+    key: (item: T) => string | number,
+    load: (group: string) => Promise<T[]>,
+  ): Promise<T[]> => {
+    const lists = await mapLimit(groups, projectConcurrency, async (g) => {
+      try {
+        return await load(g);
+      } catch (e) {
+        if (!config.group && isMissing(e)) {
+          return [];
+        }
+        throw e;
+      }
+    });
+    const seen = new Map<string | number, T>();
+    for (const item of lists.flat()) if (!seen.has(key(item))) seen.set(key(item), item);
+    return [...seen.values()];
+  };
+
   // --- membri -------------------------------------------------------------------------------
 
+  /**
+   * Membri dei gruppi più il proprietario del token, che compare sempre (anche se i gruppi
+   * non espongono i membri), così le sue statistiche sono sempre scaricabili.
+   */
   const loadMembers = (): Promise<MemberInfo[]> =>
     membersCache.get('members', async () => {
-      const raw = await client.getAll<ApiMember>(`/groups/${group}/members/all`);
+      const { all } = await loadGroups();
+      const [fromAll, self] = await Promise.all([
+        fromGroups<ApiMember>(
+          all,
+          (m) => m.id,
+          (g) => client.getAll<ApiMember>(`/groups/${g}/members/all`),
+        ),
+        client.getOrNull<ApiMember>('/user'),
+      ]);
+      const raw = self ? [...fromAll, self] : fromAll;
       const seen = new Map<string, MemberInfo>();
       for (const m of raw) {
         if (m.bot || (m.state && m.state !== 'active') || isBotUsername(m.username)) continue;
@@ -213,14 +277,19 @@ export function createCollector(
     });
 
   const loadProjects = (): Promise<ApiProject[]> =>
-    projectsCache.get('projects', () =>
-      client.getAll<ApiProject>(`/groups/${group}/projects`, {
-        include_subgroups: true,
-        simple: true,
-        order_by: 'id',
-        sort: 'asc',
-        pagination: 'keyset',
-      }),
+    projectsCache.get('projects', async () =>
+      fromGroups(
+        (await loadGroups()).roots,
+        (p) => p.id,
+        (g) =>
+          client.getAll<ApiProject>(`/groups/${g}/projects`, {
+            include_subgroups: true,
+            simple: true,
+            order_by: 'id',
+            sort: 'asc',
+            pagination: 'keyset',
+          }),
+      ),
     );
 
   // --- per progetto -------------------------------------------------------------------------
@@ -347,6 +416,7 @@ export function createCollector(
     if (!me) return null;
 
     const win = marginWindow(year);
+    const { roots } = await loadGroups();
     const projects = await loadProjects();
     const projectById = new Map(projects.map((p) => [p.id, p]));
     const pathOf = (id: number | null | undefined): string | null =>
@@ -385,20 +455,30 @@ export function createCollector(
     const [commitLists, mrsRaw, issuesRaw, events, pipelineLists, deploymentLists, userInfo] =
       await Promise.all([
         mapLimit(activeProjects, projectConcurrency, (p) => loadCommits(p, year)),
-        client.getAll<ApiMr>(`/groups/${group}/merge_requests`, {
-          author_username: username,
-          scope: 'all',
-          state: 'all',
-          created_after: win.from,
-          created_before: win.to,
-        }),
-        client.getAll<ApiIssue>(`/groups/${group}/issues`, {
-          author_username: username,
-          scope: 'all',
-          state: 'all',
-          created_after: win.from,
-          created_before: win.to,
-        }),
+        fromGroups<ApiMr>(
+          roots,
+          (m) => `${m.project_id}:${m.iid}`,
+          (g) =>
+            client.getAll<ApiMr>(`/groups/${g}/merge_requests`, {
+              author_username: username,
+              scope: 'all',
+              state: 'all',
+              created_after: win.from,
+              created_before: win.to,
+            }),
+        ),
+        fromGroups<ApiIssue>(
+          roots,
+          (i) => `${i.project_id}:${i.iid}`,
+          (g) =>
+            client.getAll<ApiIssue>(`/groups/${g}/issues`, {
+              author_username: username,
+              scope: 'all',
+              state: 'all',
+              created_after: win.from,
+              created_before: win.to,
+            }),
+        ),
         client.getAll<ApiEvent>(`/users/${me.id}/events`, {
           after: win.afterDate,
           before: win.beforeDate,

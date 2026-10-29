@@ -16,15 +16,14 @@ describe('loadConfig', () => {
     });
   });
 
-  it('con DEMO_MODE=false richiede token e gruppo senza stampare il token', () => {
-    expect(() => loadConfig({ DEMO_MODE: 'false' })).toThrow(/GITLAB_TOKEN, GITLAB_GROUP/);
-    try {
-      loadConfig({ DEMO_MODE: 'false', GITLAB_TOKEN: 'glpat-segreto' });
-    } catch (err) {
-      expect(err).toBeInstanceOf(ConfigError);
-      expect((err as Error).message).toContain('GITLAB_GROUP');
-      expect((err as Error).message).not.toContain('glpat-segreto');
-    }
+  it('con DEMO_MODE=false richiede il token', () => {
+    expect(() => loadConfig({ DEMO_MODE: 'false' })).toThrow(ConfigError);
+    expect(() => loadConfig({ DEMO_MODE: 'false' })).toThrow(/GITLAB_TOKEN/);
+  });
+
+  it('con DEMO_MODE=false il gruppo è facoltativo', () => {
+    const cfg = loadConfig({ DEMO_MODE: 'false', GITLAB_TOKEN: 'glpat-segreto' });
+    expect(cfg).toMatchObject({ demoMode: false, gitlabGroup: '' });
   });
 
   it('accetta configurazione reale completa', () => {

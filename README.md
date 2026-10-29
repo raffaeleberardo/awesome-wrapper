@@ -17,7 +17,7 @@ La modalità demo usa un team inventato: nessun token, nessuna configurazione.
 ## Passare ai dati reali
 
 1. Crea il file di configurazione: `cp .env.example .env`
-2. Apri `.env` e compila `GITLAB_TOKEN` (un Group Access Token con scope `read_api`) e `GITLAB_GROUP` (il percorso del gruppo, per esempio `azienda/team`). Non serve toccare `DEMO_MODE`: `make up` usa sempre i dati reali, `make demo` sempre quelli finti.
+2. Apri `.env` e compila `GITLAB_TOKEN` (un Group Access Token con scope `read_api`) e, se vuoi limitarti a un gruppo, `GITLAB_GROUP` (il percorso, per esempio `azienda/team`; se resta vuoto si leggono tutti i gruppi di cui il token fa parte). Non serve toccare `DEMO_MODE`: `make up` usa sempre i dati reali, `make demo` sempre quelli finti.
 3. Avvia con `make up` e apri http://localhost:8080.
 
 Come creare il token: [docs/gitlab-token.md](docs/gitlab-token.md). Il file `.env` è escluso da Git: non committarlo.
