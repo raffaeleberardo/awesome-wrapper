@@ -4,10 +4,15 @@ Il tuo anno su GitLab, in stile Spotify Wrapped: storie a schermo intero con le 
 
 L'app mostra solo il wrapped di chi la avvia: riconosce la persona dal token GitLab, non c'è una lista di colleghi da sfogliare. È pensata per girare in locale: ognuno la avvia sul proprio computer e inserisce URL di GitLab, gruppo e il proprio token nella schermata iniziale.
 
+Ci sono due modi di usarla:
+
+- **Solo usarla, senza il codice**: con il [kit](docs/kit.md), uno zip con un `compose.yaml` che scarica le immagini già pronte. Serve solo Docker.
+- **Dal codice sorgente**: clonando questo repository, come qui sotto.
+
 ## Avvio in 3 comandi
 
 ```bash
-git clone <URL-del-repo> git-wrapped
+git clone https://github.com/raffaeleberardo/awesome-wrapper.git git-wrapped
 cd git-wrapped
 make demo
 ```
@@ -31,31 +36,34 @@ Il calendario Outlook è facoltativo: si carica dalla pagina del calendario, ved
 ## Requisiti
 
 - **Docker** con **Docker Compose v2**. Verifica con `docker compose version`.
-- **make**. Su Windows non è incluso di default: usa WSL2, installalo a parte, oppure lancia direttamente `docker compose up -d --build --wait` e `docker compose down` per fermare. Senza make si apre la schermata iniziale; per la demo diretta metti `DEMO_MODE=true` in `.env`.
+- **make**. Su Windows non è incluso di default: usa WSL2, installalo a parte, oppure lancia direttamente `docker compose up -d --build --wait` e `docker compose down` per fermare. Senza make si apre la schermata iniziale; per la demo diretta metti `DEMO_MODE=true` in `.env`. Chi vuole solo usare l'app su Windows fa prima con il [kit](docs/kit.md#windows).
+- Docker Desktop ha una licenza gratuita solo sotto certe dimensioni aziendali: vedi [docs/kit.md](docs/kit.md#licenza-di-docker-desktop).
 - Solo per lo sviluppo locale senza Docker: **Node.js 22** o successivo e **pnpm 10** (la versione è fissata in `package.json`).
 
 ## Comandi del Makefile
 
-| Comando     | Cosa fa                                        |
-| ----------- | ---------------------------------------------- |
-| `make demo` | Avvia con i dati finti, nessuna configurazione |
-| `make up`   | Avvia con i dati GitLab reali da `.env`        |
-| `make down` | Ferma e rimuove i container                    |
-| `make test` | Unit ed end-to-end dentro un container         |
-| `make logs` | Log dei servizi (già privi di dati personali)  |
-| `make kit`  | Pubblica le immagini e crea lo zip del kit     |
+| Comando     | Cosa fa                                                            |
+| ----------- | ------------------------------------------------------------------ |
+| `make demo` | Avvia con i dati finti, nessuna configurazione                     |
+| `make up`   | Avvia con i dati GitLab reali (impostazioni dalla pagina o `.env`) |
+| `make down` | Ferma e rimuove i container                                        |
+| `make test` | Unit ed end-to-end dentro un container                             |
+| `make logs` | Log dei servizi (già privi di dati personali)                      |
+| `make kit`  | Pubblica le immagini su `ghcr.io` e crea lo zip del kit            |
 
-Le variabili d'ambiente sono documentate in `.env.example`: le principali sono `DEMO_MODE`, `GITLAB_URL`, `GITLAB_TOKEN`, `GITLAB_GROUP`, `WRAPPED_YEAR`, `TZ`, `CACHE_TTL_MINUTES` e `GITLAB_CA_CERT`.
+L'app risponde solo su `127.0.0.1:8080`: chi è sulla stessa rete non può aprirla.
+
+Le variabili d'ambiente, tutte facoltative, sono documentate in `.env.example`: le principali sono `DEMO_MODE`, `GITLAB_URL`, `GITLAB_TOKEN`, `GITLAB_GROUP`, `WRAPPED_YEAR`, `TZ`, `CACHE_TTL_MINUTES` e `GITLAB_CA_CERT`.
 
 ## Condividere l'app senza Git
 
-Chi vuole solo usare l'app non ha bisogno del codice: basta il **kit** in `kit/` (un `compose.yaml` che scarica le immagini già pronte da `ghcr.io/raffaeleberardo`, `env.example` e `LEGGIMI.txt`). Si manda lo zip in chat e ognuno, con solo Docker, lancia `docker compose up -d` e inserisce URL, gruppo e token nella pagina.
+Chi vuole solo usare l'app non ha bisogno del codice: basta il **kit** in `kit/` (un `compose.yaml` che scarica le immagini già pronte da `ghcr.io/raffaeleberardo`, `env.example` e `LEGGIMI.txt`). Si manda lo zip e ognuno, con solo Docker, lancia `docker compose up -d` e inserisce URL, gruppo e token nella pagina.
 
-Per pubblicare una nuova versione: fai il commit, poi `make kit`. Lo script `scripts/publish-kit.sh` costruisce le immagini per `amd64` e `arm64`, le carica con il tag del commit e `latest`, e crea `dist/git-wrapped-kit.zip`. La prima volta serve `docker login ghcr.io` con un token GitHub con scope `write:packages`, e dopo il primo caricamento i due pacchetti vanno resi pubblici dalle impostazioni del pacchetto su GitHub. Chi ha già il kit aggiorna con `docker compose pull && docker compose up -d`.
+Per pubblicare una nuova versione: commit, poi `make kit`, che costruisce le immagini per `amd64` e `arm64`, le carica con il tag del commit e `latest` e crea `dist/git-wrapped-kit.zip`. Tutti i dettagli (primo login a `ghcr.io`, visibilità dei pacchetti, Windows, problemi comuni) sono in [docs/kit.md](docs/kit.md).
 
 ## Privacy in breve
 
-- Il token GitLab è tuo, di sola lettura (`read_api`) e sta solo nel tuo `.env`, sul tuo computer.
+- Il token GitLab è tuo e di sola lettura (`read_api`). Resta sul tuo computer: nella memoria del server locale (mai su disco), nel browser solo se scegli «Ricorda», oppure nel tuo `.env` se lo usi.
 - L'app mostra solo il tuo wrapped: non esiste una rotta per leggere le statistiche di altre persone.
 - Le statistiche restano in memoria per 15 minuti (`CACHE_TTL_MINUTES`). Non c'è un database, non ci sono volumi, e nulla viene scritto su disco.
 - Il calendario `.ics` viene letto solo nel browser e non viene mai inviato al server.
@@ -81,7 +89,7 @@ pnpm lint
 git-wrapped/
 ├── apps/
 │   ├── api/          # server Fastify: rotte, cache, collettore GitLab (src/gitlab)
-│   └── web/          # SPA React: storie, card, calendario
+│   └── web/          # SPA React: schermata iniziale, storie, card, calendario
 ├── packages/
 │   ├── contracts/    # schemi zod condivisi: fonte di verità per API e statistiche
 │   ├── stats/        # motore statistiche e badge; anche il calendario, che gira nel browser
@@ -89,6 +97,8 @@ git-wrapped/
 │   └── fixtures/     # team finto (per la demo) e file .ics di esempio
 ├── docker/           # Dockerfile di api e web, Caddyfile
 ├── e2e/              # test end-to-end con Playwright
+├── kit/              # kit da condividere: compose.yaml con le immagini pubblicate, LEGGIMI.txt
+├── scripts/          # publish-kit.sh (make kit), generatore della documentazione dei contratti
 ├── docs/             # documentazione
 ├── compose.yaml
 ├── Makefile
@@ -100,6 +110,7 @@ Le soglie dei badge sono in [packages/stats/BADGES.md](packages/stats/BADGES.md)
 ## Documentazione
 
 - [Creare il token GitLab](docs/gitlab-token.md)
+- [Il kit: usare l'app senza il codice, e pubblicarlo](docs/kit.md)
 - [Esportare il calendario da Outlook](docs/calendario-outlook.md)
 - [Privacy](docs/privacy.md)
 - [Aggiungere un badge](docs/aggiungere-un-badge.md)

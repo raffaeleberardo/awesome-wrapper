@@ -34,6 +34,7 @@ I **messaggi di commit** sono letti, perché sono già visibili a tutto il team.
 - **Nessun volume.** Il container non ha dati persistenti.
 - **Filesystem in sola lettura**, con solo `/tmp` disponibile in scrittura.
 - **Nessun file** creato fuori da `/tmp` durante una richiesta.
+- **Il token non finisce su disco** dall'app: resta nella RAM del container `api`. Nel browser resta solo se scegli «Ricorda su questo browser» (`localStorage`, sullo stesso computer); senza, il browser ricorda solo indirizzo e gruppo. Un token ricordato che GitLab rifiuta viene dimenticato.
 
 ## Log
 
@@ -53,6 +54,8 @@ I **messaggi di commit** sono letti, perché sono già visibili a tutto il team.
 - **Content Security Policy** con `connect-src 'self'`: la pagina può parlare solo con il proprio server, non con altri domini.
 - **Font serviti dal container**: nessuna chiamata a servizi esterni per i caratteri.
 - Header di sicurezza impostati da Caddy.
+- **Solo da questo computer**: la porta è pubblicata su `127.0.0.1`, quindi chi è sulla stessa rete non può aprire l'app.
+- **Anti-CSRF**: le richieste che cambiano le impostazioni richiedono un'intestazione (`x-git-wrapped`) che un altro sito aperto nel browser non può inviare.
 
 ## Condivisione
 

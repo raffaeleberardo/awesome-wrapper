@@ -39,6 +39,24 @@ Vuoi solo curiosare? "Prova con dati inventati".
 Non attivarlo su un computer condiviso.
 
 
+SU WINDOWS
+----------
+  - Per aprire il terminale nella cartella: tasto destro sulla cartella > "Apri nel Terminale".
+  - I comandi sono gli stessi in PowerShell e nel Prompt dei comandi.
+  - Se ti serve il file .env (solo opzioni avanzate), crealo dal terminale:
+        copy env.example .env
+
+
+SE QUALCOSA NON VA
+------------------
+  - "denied" scaricando le immagini: probabilmente un proxy aziendale; configuralo in
+    Docker Desktop > Settings > Resources > Proxies.
+  - "Non riesco a parlare con GitLab a questo indirizzo": controlla l'URL, la VPN, oppure
+    serve il certificato aziendale (GITLAB_CA_CERT in .env, poi
+    docker compose up -d --force-recreate).
+  - Guida completa: https://github.com/raffaeleberardo/awesome-wrapper/blob/main/docs/kit.md
+
+
 COMANDI UTILI
 -------------
   Fermare l'app:         docker compose down

@@ -44,6 +44,17 @@ Dal file l'app calcola queste statistiche per l'anno raccontato:
 
 I conteggi dipendono da ciò che è presente nel file: per esempio gli inviti rifiutati e il numero dei partecipanti compaiono solo se Outlook li esporta.
 
+## Se il file non viene letto
+
+L'app accetta gli export reali, anche quelli imperfetti:
+
+- codifica UTF-8 (con o senza BOM), UTF-16 e Windows-1252;
+- a capo in stile Windows, Mac o Linux, righe vuote e spazi in fondo alle righe;
+- testo andato a capo senza la piegatura prevista dal formato, e virgolette non chiuse nei partecipanti;
+- più calendari nello stesso file.
+
+Un singolo evento illeggibile (per esempio con una data vuota) viene saltato senza scartare il resto. Se compare comunque «Non riesco a leggere questo file», di solito il file non è un calendario: controlla che inizi con `BEGIN:VCALENDAR` (si apre con un editor di testo) e che non sia un collegamento o un file `.msg`/`.pst`. Il limite è di 20 MB e 20.000 riunioni nell'anno.
+
 ## Cosa non viene letto e cosa non esce dal browser
 
 - Il file viene elaborato da un **Web Worker nel browser**. Il worker non fa richieste di rete.

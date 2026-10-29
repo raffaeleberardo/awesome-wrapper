@@ -2,7 +2,7 @@
 
 Git Wrapped mostra **il tuo** anno su GitLab, e solo il tuo. Per capire chi sei usa il token: all'avvio chiede a GitLab a chi appartiene (`GET /user`) e prepara il wrapped di quella persona. Per questo serve un **Personal Access Token** tuo, con il solo scope `read_api`.
 
-Ognuno clona il repository, mette il proprio token nel proprio `.env` e avvia l'app sul proprio computer con `make up`. Il token non va condiviso con nessuno, nemmeno con i colleghi del team.
+Ognuno avvia l'app sul proprio computer (con il [kit](kit.md) o dal repository con `make up`) e inserisce il proprio token nella schermata iniziale. Il token non va condiviso con nessuno, nemmeno con i colleghi del team.
 
 > **Nota sulle versioni.** I nomi dei menu cambiano tra versioni di GitLab. I passi qui sotto descrivono il flusso generale: se una voce non corrisponde a quella che vedi, consulta la documentazione GitLab della tua istanza.
 
@@ -64,11 +64,12 @@ Se in un progetto le impostazioni di GitLab nascondono alcuni dati (per esempio 
 
 ## Errori comuni
 
-- **`unauthorized` (401)**: il token manca, è scritto male, è scaduto o è stato revocato. Creane uno nuovo e aggiorna `.env`, poi riavvia con `make up`.
+- **`unauthorized` (401)**: il token manca, è scritto male, è scaduto o è stato revocato. Creane uno nuovo e inseriscilo con «Cambia GitLab o token» (o aggiorna `.env` e riavvia, se usi quello).
 - **`bot_token` (403)**: hai usato un Group o Project Access Token. Serve un Personal Access Token, vedi sopra.
-- **`not_found` (404)**: il token è valido ma nei gruppi letti non c'è tua attività leggibile. Controlla `GITLAB_GROUP` o lascialo vuoto.
+- **`not_found` (404)**: il token è valido ma nei gruppi letti non c'è tua attività leggibile, oppure il gruppo indicato non esiste o il token non può leggerlo. Controlla il gruppo o lascialo vuoto.
+- **«Non riesco a parlare con GitLab a questo indirizzo»**: l'URL è sbagliato, il GitLab è raggiungibile solo in VPN, oppure usa un certificato interno (vedi `GITLAB_CA_CERT` qui sotto).
 
 ## Istanze self-hosted
 
-- **`GITLAB_URL`**: l'indirizzo della tua istanza, per esempio `https://gitlab.azienda.example`. Il default è `https://gitlab.com`.
+- **Indirizzo**: quello della tua istanza, per esempio `https://gitlab.azienda.example`, nella schermata iniziale (o in `GITLAB_URL`). Il default è `https://gitlab.com`.
 - **`GITLAB_CA_CERT`**: serve solo se l'istanza usa una CA aziendale non riconosciuta dal sistema. Va incollato il contenuto del certificato della CA in formato PEM, tra virgolette doppie anche su più righe (esempio in `.env.example`). Un percorso di file funziona solo se monti tu il file nel container `api`.
