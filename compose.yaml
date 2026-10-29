@@ -46,7 +46,8 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
-    ports: ['8080:8080']
+    # Solo da questo computer: chi è sulla stessa rete (es. Wi-Fi dell'ufficio) non la vede.
+    ports: ['127.0.0.1:8080:8080']
     read_only: true
     tmpfs: [/tmp]
     user: '1000:1000'
