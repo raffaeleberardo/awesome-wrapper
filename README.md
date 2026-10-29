@@ -41,8 +41,15 @@ Il calendario Outlook è facoltativo: si carica dalla pagina del calendario, ved
 | `make down` | Ferma e rimuove i container                    |
 | `make test` | Unit ed end-to-end dentro un container         |
 | `make logs` | Log dei servizi (già privi di dati personali)  |
+| `make kit`  | Pubblica le immagini e crea lo zip del kit     |
 
 Le variabili d'ambiente sono documentate in `.env.example`: le principali sono `DEMO_MODE`, `GITLAB_URL`, `GITLAB_TOKEN`, `GITLAB_GROUP`, `WRAPPED_YEAR`, `TZ`, `CACHE_TTL_MINUTES` e `GITLAB_CA_CERT`.
+
+## Condividere l'app senza Git
+
+Chi vuole solo usare l'app non ha bisogno del codice: basta il **kit** in `kit/` (un `compose.yaml` che scarica le immagini già pronte da `ghcr.io/raffaeleberardo`, `env.example` e `LEGGIMI.txt`). Si manda lo zip in chat e ognuno, con solo Docker, mette il proprio token nel suo `.env` e lancia `docker compose up -d`.
+
+Per pubblicare una nuova versione: fai il commit, poi `make kit`. Lo script `scripts/publish-kit.sh` costruisce le immagini per `amd64` e `arm64`, le carica con il tag del commit e `latest`, e crea `dist/git-wrapped-kit.zip`. La prima volta serve `docker login ghcr.io` con un token GitHub con scope `write:packages`, e dopo il primo caricamento i due pacchetti vanno resi pubblici dalle impostazioni del pacchetto su GitHub. Chi ha già il kit aggiorna con `docker compose pull && docker compose up -d`.
 
 ## Privacy in breve
 

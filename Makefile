@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 COMPOSE ?= docker compose
 
-.PHONY: help demo up down test logs
+.PHONY: help demo up down test logs kit
 
 help: ## Mostra i comandi disponibili
 	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-6s %s\n", $$1, $$2}'
@@ -27,3 +27,6 @@ test: ## Unit ed end-to-end dentro un container (immagine Playwright)
 
 logs: ## Log dei servizi (gia' privi di dati personali)
 	$(COMPOSE) logs -f --tail=100
+
+kit: ## Pubblica le immagini su ghcr.io e crea dist/git-wrapped-kit.zip
+	scripts/publish-kit.sh
