@@ -209,6 +209,7 @@ export const exampleWrappedStats: WrappedStats = {
     failed: 143,
     successRate: 0.854,
     longestFailStreak: 6,
+    recoveries: 41,
     graveyard: [
       {
         projectPath: 'acme/piattaforma/backend',
@@ -232,6 +233,12 @@ export const exampleWrappedStats: WrappedStats = {
       at: '2026-03-15T03:12:00+01:00',
       value: 192,
       projectPath: 'acme/piattaforma/backend',
+    },
+    {
+      kind: 'earliest_morning_commit',
+      at: '2026-06-03T05:47:00+02:00',
+      value: 347,
+      projectPath: 'acme/piattaforma/frontend',
     },
   ],
   badges: [
@@ -313,7 +320,7 @@ export const exampleHealthResponse: HealthResponse = {
   status: 'ok',
   demoMode: true,
   year: 2026,
-  contractsVersion: 1,
+  contractsVersion: 2,
 };
 
 export const exampleMembersResponse: MembersResponse = {

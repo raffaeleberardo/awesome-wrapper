@@ -13,6 +13,7 @@ import {
   fridayDay,
   mr,
   note,
+  pipeline,
   team,
   times,
   winter,
@@ -65,6 +66,10 @@ describe('computeTeamAwards', () => {
       activity({
         member: bruno,
         commits: [commit(winter(3, 22, 0), { message: 'ok' })],
+        pipelines: [
+          pipeline({ status: 'failed', createdAt: winter(2, 9), author: bruno.username }),
+          pipeline({ status: 'success', createdAt: winter(2, 10), author: bruno.username }),
+        ],
         notes: times(2, () => note({ counterpart: ada.username })),
         emojiGiven: times(5, () => emojiGiven({ name: 'eyes' })),
       }),
@@ -75,6 +80,7 @@ describe('computeTeamAwards', () => {
     expect(result.awards.map((a) => a.id)).toEqual([
       'best_duet',
       'night_shift',
+      'pipeline_phoenix',
       'emoji_of_the_year',
       'marathon_mr',
       'hemingway',
@@ -92,7 +98,8 @@ describe('computeTeamAwards', () => {
     expect(get('tolstoy')).toMatchObject({ winners: [ada], value: 300 });
     expect(get('golden_broom')).toMatchObject({ winners: [ada], value: 8.2 });
     expect(get('friday_courage')).toMatchObject({ winners: [ada], value: 1 });
-    expect(get('first_light')).toMatchObject({ winners: [ada], value: 5, detail: '05:00' });
+    expect(get('first_light')).toMatchObject({ winners: [ada], value: 310, detail: '05:10' });
+    expect(get('pipeline_phoenix')).toMatchObject({ winners: [bruno], value: 1, detail: null });
     expect(result.teamTotals.commits).toBe(3);
   });
 

@@ -12,10 +12,14 @@ import { isNightHour, type ActivityContext } from './internal/context';
  *   commit dalle 22:00 alle 04:59, quello più vicino alle 04:00;
  * - `fastest_approval`: minuti tra creazione e prima approvazione di una MR della persona;
  * - `longest_mr`: giorni (1 decimale) tra creazione e merge, MR mergiate nell'anno;
- * - `busiest_day`: commit in quel giorno (`at` = primo commit del giorno).
+ * - `busiest_day`: commit in quel giorno (`at` = primo commit del giorno);
+ * - `earliest_morning_commit`: minuti dalla mezzanotte locale del commit più presto tra le
+ *   05:00 e le 11:59 (05:47 → 347).
  */
 
 const FOUR_AM = 4 * 60;
+const EARLIEST_MORNING_FROM = 5 * 60;
+const EARLIEST_MORNING_TO = 12 * 60;
 
 function circularDistance(a: number, b: number): number {
   const d = Math.abs(a - b) % 1440;
@@ -138,6 +142,22 @@ export function computeEpicMoments(ctx: ActivityContext): EpicMoment[] {
       at: busiest.first.item.authoredAt,
       value: busiest.count,
       projectPath: null,
+    });
+  }
+
+  // Il commit più mattiniero (dalle 05:00 alle 11:59); a parità di minuto, il primo dell'anno.
+  let morning: (typeof ctx.commits)[number] | null = null;
+  for (const c of ctx.commits) {
+    const minute = c.at.minuteOfDay;
+    if (minute < EARLIEST_MORNING_FROM || minute >= EARLIEST_MORNING_TO) continue;
+    if (!morning || minute < morning.at.minuteOfDay) morning = c;
+  }
+  if (morning) {
+    moments.push({
+      kind: 'earliest_morning_commit',
+      at: morning.item.authoredAt,
+      value: morning.at.minuteOfDay,
+      projectPath: morning.item.projectPath,
     });
   }
 

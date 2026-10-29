@@ -218,6 +218,8 @@ describe('pipeline', () => {
     expect(p.failed).toBe(4);
     expect(p.successRate).toBe(0.333);
     expect(p.longestFailStreak).toBe(3);
+    // main: rossa, rossa, verde → una rinascita; feat: solo rossa.
+    expect(p.recoveries).toBe(1);
     expect(p.graveyard).toEqual([
       { projectPath: 'acme/officina/motore', ref: 'main', failedAt: winter(6) },
       { projectPath: 'acme/officina/motore', ref: 'main', failedAt: winter(3) },
@@ -331,5 +333,7 @@ describe('momenti epici', () => {
     expect(byKind.fastest_approval).toMatchObject({ value: 42 });
     expect(byKind.longest_mr).toMatchObject({ value: 3.5 });
     expect(byKind.busiest_day).toMatchObject({ value: 2, at: winter(2, 9), projectPath: null });
+    // 04:50 è ancora notte: il più mattiniero è quello delle 09:00.
+    expect(byKind.earliest_morning_commit).toMatchObject({ value: 540, at: winter(2, 9) });
   });
 });

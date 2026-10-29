@@ -5,9 +5,6 @@ import { charLength, compareStrings, round } from './internal/math';
  * Premi della notte degli Oscar, calcolati solo dalle `WrappedStats` del team.
  * Regole (dettagli in BADGES.md): pari merito ammessi (vincitori in ordine di username),
  * premio omesso se nessuno ha dati utili. Nessun premio misura il volume di lavoro.
- *
- * `pipeline_phoenix` è sempre omesso: le `WrappedStats` non contengono il numero di pipeline
- * verdi subito dopo una rossa (richiesta aperta in docs/contract-requests.md).
  */
 
 /** Minimo di righe cambiate per lo Spazzino d'oro (come Marie Kondo). */
@@ -161,16 +158,29 @@ function fridayCourage(stats: WrappedStats[]): TeamAward | null {
   return podium('friday_courage', candidates);
 }
 
-/** Mattiniero: l'ora più presto (dalle 05:00 alle 11:59) con almeno un commit. */
+/** Mattiniero: il commit più presto (dalle 05:00 alle 11:59), al minuto. */
 function firstLight(stats: WrappedStats[]): TeamAward | null {
   const candidates: Candidate[] = [];
   for (const s of stats) {
-    const hour = s.hours.findIndex((count, h) => h >= 5 && h < 12 && count > 0);
-    if (hour >= 0) {
-      candidates.push({ member: s.member, rank: [hour], value: hour, detail: clock(hour * 60) });
-    }
+    const morning = s.epicMoments.find((m) => m.kind === 'earliest_morning_commit');
+    if (!morning) continue;
+    const minute = morning.value;
+    candidates.push({ member: s.member, rank: [minute], value: minute, detail: clock(minute) });
   }
   return podium('first_light', candidates);
+}
+
+/** Fenice: più pipeline verdi subito dopo una rossa (stesso progetto e ref). */
+function pipelinePhoenix(stats: WrappedStats[]): TeamAward | null {
+  const candidates = stats
+    .filter((s) => s.pipelines.recoveries > 0)
+    .map((s) => ({
+      member: s.member,
+      rank: [-s.pipelines.recoveries],
+      value: s.pipelines.recoveries,
+      detail: null,
+    }));
+  return podium('pipeline_phoenix', candidates);
 }
 
 export function computeAwards(allStats: WrappedStats[], year: number): TeamAwards {
@@ -178,7 +188,7 @@ export function computeAwards(allStats: WrappedStats[], year: number): TeamAward
   const awards = [
     bestDuet(stats),
     nightShift(stats),
-    // pipeline_phoenix: omesso, dato non disponibile nelle WrappedStats.
+    pipelinePhoenix(stats),
     emojiOfTheYear(stats),
     marathonMr(stats),
     hemingway(stats),

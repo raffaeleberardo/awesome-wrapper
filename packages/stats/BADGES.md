@@ -81,7 +81,8 @@ Note:
   `last_commit` giorno dell'anno (1 = 1° gennaio); `latest_night_commit` minuti dalla mezzanotte
   (03:12 → 192) del commit tra 22:00 e 04:59 più vicino alle 04:00; `fastest_approval` minuti tra
   creazione e prima approvazione di una MR della persona; `longest_mr` giorni (1 decimale) tra
-  creazione e merge; `busiest_day` commit nel giorno più pieno (`at` = primo commit del giorno).
+  creazione e merge; `busiest_day` commit nel giorno più pieno (`at` = primo commit del giorno);
+  `earliest_morning_commit` minuti dalla mezzanotte del commit più presto tra 05:00 e 11:59.
 - `horoscopeSeed`: FNV-1a 32 bit sui byte UTF-8 di `username + ':' + anno`.
 
 ## Personalità
@@ -131,11 +132,11 @@ di username; `value` e `detail` del primo). Un premio senza candidati viene omes
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- | --------------- |
 | `best_duet`         | coppia (persona, partner del duetto) con più interazioni; tra le due metà si tiene il conteggio più alto; a parità la coppia alfabeticamente prima. Sempre due vincitori | interazioni             | —               |
 | `night_shift`       | `latest_night_commit` più vicino alle 04:00                                                                                                                              | minuti dalla mezzanotte | orario `HH:MM`  |
-| `pipeline_phoenix`  | **sempre omesso**: le `WrappedStats` non contengono le pipeline verdi subito dopo una rossa (richiesta aperta in `docs/contract-requests.md`)                            | —                       | —               |
+| `pipeline_phoenix`  | `pipelines.recoveries` più alto (> 0): pipeline `success` subito dopo una `failed` sullo stesso progetto e ref (`contracts-v2`)                                          | rinascite               | —               |
 | `emoji_of_the_year` | emoji con più usi sommando i `topGiven` del team; vince chi l'ha usata di più                                                                                            | usi del vincitore       | nome dell'emoji |
 | `marathon_mr`       | massimo tra `longest_mr` e `ghostMrs.oldestDays`                                                                                                                         | giorni                  | —               |
 | `hemingway`         | `commitMessages.shortest` più corto (non vuoto)                                                                                                                          | caratteri               | il messaggio    |
 | `tolstoy`           | `commitMessages.longestLength` più alto                                                                                                                                  | caratteri               | —               |
 | `golden_broom`      | rapporto righe cancellate / aggiunte più alto (min 500 righe cambiate, almeno una cancellata)                                                                            | rapporto (2 dec.)       | —               |
 | `friday_courage`    | `fridayDeploys.count` più alto (> 0)                                                                                                                                     | deploy                  | —               |
-| `first_light`       | ora più presto tra le 05:00 e le 11:59 con almeno un commit (dall'istogramma `hours`: precisione all'ora)                                                                | ora (0–23)              | orario `HH:00`  |
+| `first_light`       | momento epico `earliest_morning_commit` più presto (commit tra 05:00 e 11:59, al minuto; `contracts-v2`)                                                                 | minuti dalla mezzanotte | orario `HH:MM`  |

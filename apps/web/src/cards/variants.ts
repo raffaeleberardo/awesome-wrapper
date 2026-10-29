@@ -55,7 +55,14 @@ export const zeroStats: WrappedStats = {
     wipCount: 0,
     emojiCount: 0,
   },
-  pipelines: { total: 0, failed: 0, successRate: null, longestFailStreak: 0, graveyard: [] },
+  pipelines: {
+    total: 0,
+    failed: 0,
+    successRate: null,
+    longestFailStreak: 0,
+    recoveries: 0,
+    graveyard: [],
+  },
   ghostMrs: { count: 0, oldestDays: null },
   fridayDeploys: { count: 0, latestAt: null },
   emoji: { topGiven: [], topReceived: [] },
@@ -148,6 +155,7 @@ export const extremeStats: WrappedStats = {
     failed: BIG,
     successRate: 0.01,
     longestFailStreak: BIG,
+    recoveries: BIG,
     graveyard: Array.from({ length: 3 }, (_, i) => ({
       projectPath: `${LONG_PATH}-${i}`,
       ref: `feature/${LONG_WORD}`,

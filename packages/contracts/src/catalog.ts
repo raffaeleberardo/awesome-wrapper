@@ -135,6 +135,8 @@ export const EPIC_MOMENT_KINDS = [
   'longest_mr',
   /** Il giorno con più commit */
   'busiest_day',
+  /** Il commit più mattiniero dalle 05:00 alle 11:59, in minuti dalla mezzanotte (`contracts-v2`) */
+  'earliest_morning_commit',
 ] as const;
 export const epicMomentKindSchema = z.enum(EPIC_MOMENT_KINDS);
 export type EpicMomentKind = z.infer<typeof epicMomentKindSchema>;
