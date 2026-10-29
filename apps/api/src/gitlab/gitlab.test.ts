@@ -242,6 +242,13 @@ function world(url: URL): Response | object | null {
   if (p === '/projects/10/pipelines') {
     return [{ id: 100, status: 'failed', ref: 'main', created_at: '2026-03-01T10:00:00Z' }];
   }
+  // come GitLab: il filtro `updated_*` va accoppiato a `order_by=updated_at`, altrimenti 400
+  if (
+    /^\/projects\/\d+\/deployments$/.test(p) &&
+    url.searchParams.has('updated_after') !== (url.searchParams.get('order_by') === 'updated_at')
+  ) {
+    return new Response('{}', { status: 400 });
+  }
   if (p === '/projects/10/deployments') {
     return [
       {
@@ -358,6 +365,16 @@ describe('GitLab source', () => {
       .listMembers()
       .catch((e: unknown) => e);
     expect((e2 as SourceError).code).toBe('unauthorized');
+  });
+
+  it('un 4xx imprevisto diventa upstream_error, non un errore generico', async () => {
+    route = (url) =>
+      url.pathname.endsWith('/events') ? new Response('{}', { status: 400 }) : world(url);
+    const err = await createGitLabSource(config, fast)
+      .getActivity('ada', 2026)
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SourceError);
+    expect((err as SourceError).code).toBe('upstream_error');
   });
 
   it('utente non membro (o bot) -> null', async () => {

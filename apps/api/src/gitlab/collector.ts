@@ -413,10 +413,11 @@ export function createCollector(
           }),
         ),
         mapLimit(activeProjects, projectConcurrency, (p) =>
+          // GitLab risponde 400 se il filtro `updated_*` non è accoppiato a `order_by=updated_at`
           client.getAllOrEmpty<ApiDeployment>(`/projects/${p.id}/deployments`, {
             updated_after: win.from,
             updated_before: win.to,
-            order_by: 'created_at',
+            order_by: 'updated_at',
             sort: 'asc',
           }),
         ),
@@ -770,5 +771,19 @@ export function createCollector(
     return parsed.data;
   };
 
-  return { listMembers, getActivity, client };
+  /** Un 4xx non gestito sopra non deve uscire come errore generico (500): è un errore di GitLab. */
+  const upstream =
+    <A extends unknown[], R>(fn: (...args: A) => Promise<R>) =>
+    async (...args: A): Promise<R> => {
+      try {
+        return await fn(...args);
+      } catch (e) {
+        if (e instanceof HttpStatusError) {
+          throw new SourceError('upstream_error', 'Richiesta GitLab rifiutata');
+        }
+        throw e;
+      }
+    };
+
+  return { listMembers: upstream(listMembers), getActivity: upstream(getActivity), client };
 }
