@@ -42,3 +42,9 @@ Per evitare conflitti di merge, ogni agente aggiunge le proprie voci in fondo al
 - **Cosa**: opzionale, un campo `isForcePush: boolean | null` in `rawPushEventSchema`, oppure nulla (si tiene il badge "Revisionista storico" sostituito).
 - **Perché**: GitLab NON espone un flag di force push negli eventi utente (`push_data` ha solo `action`, `ref_type`, `ref`, `commit_count`, `commit_from`, `commit_to`) né nei webhook. Si potrebbe dedurre un push non fast-forward con `GET /projects/:id/repository/merge_base?refs[]=commit_from&refs[]=commit_to` (se il merge base non è `commit_from`, la storia è stata riscritta), ma costa una chiamata per push e `commit_from` può non esistere più nel repository (404), quindi il dato non è affidabile.
 - **Stub adottato nel frattempo**: nessun campo; il collettore non inventa il dato. Raccomandazione: A0/A3 mantengano la sostituzione del badge; se si vuole l'euristica, il campo deve essere `nullable` ("sconosciuto").
+
+## A2 — `zod` come dipendenza di `apps/api`
+
+- **Cosa**: aggiungere `zod` (stessa versione di `packages/contracts`, `^4.6.7`) alle `dependencies` di `apps/api/package.json`.
+- **Perché**: il brief chiede di validare la configurazione con zod, ma con pnpm `zod` non è risolvibile da `apps/api` (è dipendenza solo di `packages/contracts`) e il contratto non lo riesporta.
+- **Stub adottato nel frattempo**: `apps/api/src/config.ts` valida le variabili a mano (stessi vincoli e stessi messaggi chiari). Si può sostituire con uno schema zod senza cambiare l'interfaccia `loadConfig`.
