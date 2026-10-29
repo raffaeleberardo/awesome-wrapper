@@ -48,3 +48,9 @@ Per evitare conflitti di merge, ogni agente aggiunge le proprie voci in fondo al
 - **Cosa**: aggiungere `zod` (stessa versione di `packages/contracts`, `^4.6.7`) alle `dependencies` di `apps/api/package.json`.
 - **Perché**: il brief chiede di validare la configurazione con zod, ma con pnpm `zod` non è risolvibile da `apps/api` (è dipendenza solo di `packages/contracts`) e il contratto non lo riesporta.
 - **Stub adottato nel frattempo**: `apps/api/src/config.ts` valida le variabili a mano (stessi vincoli e stessi messaggi chiari). Si può sostituire con uno schema zod senza cambiare l'interfaccia `loadConfig`.
+
+## A7 — etichette dei numeri nel catalogo testi
+
+- **Cosa**: aggiungere a `UI_KEYS` (e a `packages/copy`) le etichette dei numeri delle card: commit, righe aggiunte/cancellate, MR, approvazioni, note, pipeline, deploy, giorni, review, emoji, riunioni, ore, ecc.
+- **Perché**: le card usano oggi etichette tecniche scritte a mano (`commit`, `MR`, `righe +`, `approvazioni`...) perché il catalogo non le prevede; per coerenza di tono e lingua andrebbero in `copy.ui`.
+- **Stub adottato nel frattempo**: etichette brevi nel codice di `apps/web/src/cards/specs.tsx`; il nome dei giorni e le date vengono da `Intl` (it-IT). Il campo `placeholder`/`aria-label` "Cerca" della ricerca membri è scritto a mano per lo stesso motivo.
