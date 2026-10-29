@@ -1,0 +1,56 @@
+import type { CopyCatalog } from '@git-wrapped/contracts';
+
+/**
+ * Tre gruppi combinabili in qualunque ordine di scelta: aperture che finiscono con `:` o `,`,
+ * sviluppi in minuscolo che finiscono con un punto, chiusure autonome.
+ */
+export const horoscopeTexts: CopyCatalog['horoscope'] = {
+  openings: [
+    'Mercurio entra in retrogrado sul branch main:',
+    'Con Giove in opposizione al tuo ultimo rebase,',
+    'La luna piena illumina un vecchio merge conflict:',
+    'Saturno si allinea con la tua coda di review,',
+    'Una cometa di warning attraversa la pipeline:',
+    'Venere sorride al tuo repository,',
+    'Marte entra nella casa dei deploy:',
+    'Nella costellazione del Compilatore, qualcosa si muove:',
+    'L’ascendente è in Git blame, la luna nel changelog:',
+    'Plutone sposta una dipendenza nel lockfile:',
+    'L’eclissi coincide con un force push altrui:',
+    'Le stelle consultano il tuo reflog e annuiscono:',
+    'Nettuno porta una marea di notifiche:',
+    'All’alba del nuovo sprint, i pianeti sussurrano:',
+  ],
+  middles: [
+    'un test instabile diventerà finalmente un test serio.',
+    'una MR dimenticata tornerà con un commento gentile.',
+    'incontrerai un TODO che aspetta da una vita.',
+    'un hotfix inatteso si trasformerà in una feature.',
+    'una dipendenza antica chiederà di essere aggiornata.',
+    'una review lampo ti regalerà una sorpresa.',
+    'un messaggio di commit perfetto verrà citato dal team.',
+    'una pipeline verde arriverà proprio quando serve.',
+    'un branch dimenticato ti chiamerà per nome.',
+    'una riga cancellata renderà tutto più leggero.',
+    'un refactoring audace sarà accolto da applausi.',
+    'una variabile ben nominata ti darà gioia inattesa.',
+    'una riunione si risolverà con un solo commit.',
+    'un conflitto di merge si scioglierà senza lacrime.',
+  ],
+  closings: [
+    'Fai un respiro e un git status.',
+    'Ricorda: i test amano chi li scrive.',
+    'Evita i deploy di venerdì, ma solo se ci riesci.',
+    'Il caffè è il tuo portafortuna.',
+    'Un commit al giorno toglie l’ansia di torno.',
+    'Mantieni la calma davanti ai rebase: il reflog ti salva.',
+    'Un LGTM sincero porta fortuna a tutto il team.',
+    'Leggi due volte prima di fare push.',
+    'Fidati del tuo istinto, ma anche della CI.',
+    'Un buon nome vale mille commenti.',
+    'Il numero fortunato è 200 OK.',
+    'Salva spesso, committa meglio.',
+    'La stagione perfetta per un git pull.',
+    'Qualunque cosa accada, c’è sempre revert.',
+  ],
+};
