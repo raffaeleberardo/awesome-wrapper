@@ -402,6 +402,26 @@ describe('GitLab source', () => {
     expect(rawActivitySchema.safeParse(act).success).toBe(true);
   });
 
+  it('chiede i diff delle MR con per_page 30: oltre GitLab risponde 500', async () => {
+    route = (url) =>
+      url.pathname.endsWith('/merge_requests/7/diffs') && url.searchParams.get('per_page') !== '30'
+        ? new Response('{}', { status: 500 })
+        : world(url);
+    const act = await createGitLabSource(config, fast).getActivity('ada', 2026);
+    expect(act?.mergeRequests.find((m) => m.iid === 7)?.changedLines).toBe(3);
+  });
+
+  it('un 5xx persistente sul diff di una MR lascia changedLines a null senza bloccare il resto', async () => {
+    route = (url) =>
+      url.pathname.endsWith('/merge_requests/7/diffs')
+        ? new Response('{}', { status: 500 })
+        : world(url);
+    const act = await createGitLabSource(config, fast).getActivity('ada', 2026);
+    expect(rawActivitySchema.safeParse(act).success).toBe(true);
+    expect(act?.mergeRequests.find((m) => m.iid === 7)?.changedLines).toBeNull();
+    expect(requests.filter((r) => r.includes('/merge_requests/7/diffs'))).toHaveLength(2);
+  });
+
   it('un 4xx imprevisto diventa upstream_error, non un errore generico', async () => {
     route = (url) =>
       url.pathname.endsWith('/events') ? new Response('{}', { status: 400 }) : world(url);

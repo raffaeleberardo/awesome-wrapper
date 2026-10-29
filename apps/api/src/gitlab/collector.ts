@@ -153,7 +153,11 @@ interface SlimCommit {
 
 const TODO_RE = /\b(TODO|FIXME|XXX)\b/;
 /** Oltre queste pagine di diff (per MR) `changedLines` diventa `null`. */
-const MR_DIFF_MAX_PAGES = 5;
+const MR_DIFF_MAX_PAGES = 17;
+/** `/merge_requests/:iid/diffs` risponde 500 con `per_page` oltre 30 (visto su GitLab 17.7). */
+const MR_DIFF_PER_PAGE = 30;
+/** Tentativi per pagina di diff MR: un 5xx qui è quasi sempre permanente. */
+const MR_DIFF_MAX_ATTEMPTS = 2;
 const COMMIT_DIFF_MAX_PAGES = 10;
 
 /** Username di bot: `*_bot*` e token di progetto/gruppo (`project_123_bot`, `group_4_bot_...`). */
@@ -374,20 +378,25 @@ export function createCollector(
     return { files, todosAdded, todosRemoved };
   };
 
-  /** Righe aggiunte + rimosse di una MR, o `null` se il diff è troppo grande/non disponibile. */
+  /**
+   * Righe aggiunte + rimosse di una MR, o `null` se il diff è troppo grande/non disponibile.
+   * Se GitLab risponde comunque 5xx a `/diffs` si rinuncia al dato, non al wrapped.
+   */
   const mrChangedLines = async (projectId: number, iid: number): Promise<number | null> => {
     let entries: ApiDiffEntry[];
     try {
       entries = await client.getAll<ApiDiffEntry>(
         `/projects/${projectId}/merge_requests/${iid}/diffs`,
-        {},
+        { per_page: MR_DIFF_PER_PAGE },
         MR_DIFF_MAX_PAGES,
+        MR_DIFF_MAX_ATTEMPTS,
       );
     } catch (e) {
       if (e instanceof HttpStatusError) return null;
+      if (e instanceof SourceError && e.code === 'upstream_error') return null;
       throw e;
     }
-    if (entries.length >= MR_DIFF_MAX_PAGES * 100) return null;
+    if (entries.length >= MR_DIFF_MAX_PAGES * MR_DIFF_PER_PAGE) return null;
     let total = 0;
     for (const e of entries) {
       if (e.too_large || e.collapsed) return null;

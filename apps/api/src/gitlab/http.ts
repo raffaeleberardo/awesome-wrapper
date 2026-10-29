@@ -99,15 +99,21 @@ export class GitLabClient {
 
   /**
    * Scarica tutte le pagine. Segue `Link: rel="next"` (keyset) oppure `x-next-page` (offset).
-   * `maxPages` limita i casi patologici (diff enormi).
+   * `maxPages` limita i casi patologici (diff enormi); `maxAttempts` riduce i tentativi per le
+   * richieste di cui si può fare a meno.
    */
-  async getAll<T>(path: string, query: Query = {}, maxPages = Infinity): Promise<T[]> {
+  async getAll<T>(
+    path: string,
+    query: Query = {},
+    maxPages = Infinity,
+    maxAttempts = this.retry.maxAttempts,
+  ): Promise<T[]> {
     const out: T[] = [];
     let url: URL | null = new URL(this.base.href + path);
     this.applyQuery(url, { per_page: 100, ...query });
     let pages = 0;
     while (url && pages < maxPages) {
-      const res: { data: T[]; headers: Headers } = await this.fetchJson<T[]>(url);
+      const res: { data: T[]; headers: Headers } = await this.fetchJson<T[]>(url, maxAttempts);
       if (Array.isArray(res.data)) out.push(...res.data);
       pages++;
       url = this.nextUrl(url, res.headers);
@@ -149,9 +155,12 @@ export class GitLabClient {
     return null;
   }
 
-  private async fetchJson<T>(url: URL): Promise<{ data: T; headers: Headers }> {
+  private async fetchJson<T>(
+    url: URL,
+    maxAttempts = this.retry.maxAttempts,
+  ): Promise<{ data: T; headers: Headers }> {
     let lastStatus = 0;
-    for (let attempt = 1; attempt <= this.retry.maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       let res: RawResponse | null;
       try {
         res = await this.limited(() => this.rawGet(url));
@@ -174,7 +183,7 @@ export class GitLabClient {
       }
       const retriable = !res || status === 429 || status >= 500;
       if (!retriable) throw new HttpStatusError(status);
-      if (attempt < this.retry.maxAttempts) {
+      if (attempt < maxAttempts) {
         await this.retry.sleep(this.delayFor(attempt, res));
       }
     }
