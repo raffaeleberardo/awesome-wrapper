@@ -1,0 +1,73 @@
+# Git Wrapped: due container, nessun volume, nessun database.
+# Funziona anche senza .env (default sicuri: DEMO_MODE=true). Vedi .env.example.
+name: git-wrapped
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '1m'
+    max-file: '3'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # I default valgono se la variabile non e' in .env ne' nella shell.
+      DEMO_MODE: ${DEMO_MODE:-true}
+      GITLAB_URL: ${GITLAB_URL:-https://gitlab.com}
+      GITLAB_TOKEN: ${GITLAB_TOKEN:-}
+      GITLAB_GROUP: ${GITLAB_GROUP:-}
+      WRAPPED_YEAR: ${WRAPPED_YEAR:-2026}
+      TZ: ${TZ:-Europe/Rome}
+      CACHE_TTL_MINUTES: ${CACHE_TTL_MINUTES:-15}
+      GITLAB_CA_CERT: ${GITLAB_CA_CERT:-}
+    # Porta 3000 solo sulla rete interna: nessun "ports".
+    expose: ['3000']
+    read_only: true
+    tmpfs: [/tmp]
+    user: '1000:1000'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    ports: ['8080:8080']
+    read_only: true
+    tmpfs: [/tmp]
+    user: '1000:1000'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Solo per `make test` (profilo "test"): unit + end-to-end con l'immagine Playwright.
+  test:
+    profiles: ['test']
+    build:
+      context: .
+      dockerfile: docker/test.Dockerfile
+    environment:
+      E2E_BASE_URL: http://web:8080
+      CI: 'true'
+    ipc: host
+    depends_on:
+      web:
+        condition: service_started

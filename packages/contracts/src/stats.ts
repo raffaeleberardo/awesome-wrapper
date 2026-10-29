@@ -88,6 +88,11 @@ export const pipelineStatsSchema = z.object({
   /** `null` se nessuna pipeline. */
   successRate: ratio.nullable(),
   longestFailStreak: count,
+  /**
+   * Pipeline `success` subito dopo una `failed` sullo stesso progetto e ref, in ordine
+   * cronologico (premio Fenice delle pipeline). Aggiunto in `contracts-v2`: assente = 0.
+   */
+  recoveries: count.default(0),
   /** Fino a 3 lapidi: le pipeline fallite più memorabili. */
   graveyard: z.array(z.object({ projectPath, ref: z.string(), failedAt: isoDateTime })).max(3),
 });

@@ -1,8 +1,16 @@
-# Contratti — `contracts-v1`
+# Contratti — `contracts-v2`
 
 I contratti vivono in `packages/contracts` (schemi `zod` + tipi TypeScript inferiti) e sono
-**congelati al tag `contracts-v1`**. Nessun agente li modifica in Fase 1: le richieste di
-cambiamento vanno in [`contract-requests.md`](./contract-requests.md) e le decide A11 in Fase 2.
+**congelati al tag `contracts-v2`** (`CONTRACTS_VERSION = 2`). Le richieste di cambiamento vanno
+in [`contract-requests.md`](./contract-requests.md).
+
+**Novità di `contracts-v2`** rispetto a `contracts-v1` (tutte additive, decise da A11 in Fase 2):
+
+- `WrappedStats.pipelines.recoveries`: pipeline verdi subito dopo una rossa (stesso progetto e ref);
+  assente in un payload v1 → `0`. Abilita il premio `pipeline_phoenix`.
+- `EpicMomentKind` `earliest_morning_commit`: minuti dalla mezzanotte del commit più presto tra
+  05:00 e 11:59. Il premio `first_light` passa dalla precisione all'ora a quella al minuto.
+- `UiKey`: `search_members` e le etichette `label_*` dei numeri nelle card.
 
 ```ts
 import { wrappedStatsSchema, type WrappedStats } from '@git-wrapped/contracts';
@@ -341,6 +349,7 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
     "failed": 143,
     "successRate": 0.854,
     "longestFailStreak": 6,
+    "recoveries": 41,
     "graveyard": [
       {
         "projectPath": "acme/piattaforma/backend",
@@ -381,6 +390,12 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
       "at": "2026-03-15T03:12:00+01:00",
       "value": 192,
       "projectPath": "acme/piattaforma/backend"
+    },
+    {
+      "kind": "earliest_morning_commit",
+      "at": "2026-06-03T05:47:00+02:00",
+      "value": 347,
+      "projectPath": "acme/piattaforma/frontend"
     }
   ],
   "badges": [
@@ -505,7 +520,7 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
   "status": "ok",
   "demoMode": true,
   "year": 2026,
-  "contractsVersion": 1
+  "contractsVersion": 2
 }
 ```
 

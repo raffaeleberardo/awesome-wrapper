@@ -1,51 +1,22 @@
-import {
-  AWARD_IDS,
-  BADGE_IDS,
-  CARD_IDS,
-  PERSONALITY_IDS,
-  UI_KEYS,
-  type CopyCatalog,
-  type CopyPlaceholder,
-  type CopySection,
-} from '@git-wrapped/contracts';
+import type { CopyCatalog, CopyPlaceholder, CopySection } from '@git-wrapped/contracts';
+import { awards } from './awards';
+import { badges } from './badges';
+import { cards } from './cards';
+import { horoscopeTexts } from './horoscope';
+import { personalities } from './personalities';
+import { intro, loading, outro, ui } from './ui';
 
-/**
- * Catalogo dei testi italiani. Questo è lo stub di A0: ogni voce è un segnaposto
- * `[chiave]` perché il resto dell'app possa già leggere i testi. A4 lo sostituisce.
- */
-
-const stub = (key: string) => `[${key}]`;
-const fill = <K extends string, V>(keys: readonly K[], make: (k: K) => V) =>
-  Object.fromEntries(keys.map((k) => [k, make(k)])) as Record<K, V>;
-const many = (key: string, n: number) => Array.from({ length: n }, (_, i) => stub(`${key}.${i}`));
-
+/** Catalogo dei testi italiani, indicizzato con le chiavi dei contratti. */
 export const copy: CopyCatalog = {
-  badges: fill(BADGE_IDS, (k) => ({
-    title: stub(`badges.${k}.title`),
-    description: stub(`badges.${k}.description`),
-  })),
-  personalities: fill(PERSONALITY_IDS, (k) => ({
-    name: stub(`personalities.${k}.name`),
-    description: stub(`personalities.${k}.description`),
-    emoji: '✨',
-  })),
-  awards: fill(AWARD_IDS, (k) => ({
-    title: stub(`awards.${k}.title`),
-    description: stub(`awards.${k}.description`),
-  })),
-  cards: fill(CARD_IDS, (k) => ({
-    title: stub(`cards.${k}.title`),
-    subtitle: stub(`cards.${k}.subtitle`),
-  })),
-  horoscope: {
-    openings: many('horoscope.openings', 14),
-    middles: many('horoscope.middles', 14),
-    closings: many('horoscope.closings', 14),
-  },
-  loading: many('loading', 8),
-  intro: many('intro', 3),
-  outro: many('outro', 3),
-  ui: fill(UI_KEYS, (k) => stub(`ui.${k}`)),
+  badges,
+  personalities,
+  awards,
+  cards,
+  horoscope: horoscopeTexts,
+  loading,
+  intro,
+  outro,
+  ui,
 };
 
 /**
@@ -66,6 +37,7 @@ export function format<S extends CopySection>(
 /** Oroscopo deterministico: una frase per gruppo, scelta dal seme. */
 export function horoscope(seed: number, catalog: CopyCatalog = copy): [string, string, string] {
   const { openings, middles, closings } = catalog.horoscope;
-  const pick = (list: string[], salt: number) => list[((seed >>> 0) ^ salt) % list.length] ?? '';
+  const pick = (list: string[], salt: number) =>
+    list[(((seed >>> 0) ^ salt) >>> 0) % list.length] ?? '';
   return [pick(openings, 0), pick(middles, 0x9e3779b9 >>> 0), pick(closings, 0x85ebca6b)];
 }
