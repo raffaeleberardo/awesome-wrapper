@@ -9,20 +9,23 @@ import type {
 import { copy } from '@git-wrapped/copy';
 import { api } from './shared/api';
 import { StoryDemo, StoryPlayer } from './story';
-import { buildStoryCards, CardExportButton } from './cards';
+import { buildStoryCards, CardExportButton, CardsDemo } from './cards';
 import { MemberPicker, OscarNight } from './team';
-import { CalendarUpload } from './calendar';
+import { CalendarDemo, CalendarUpload } from './calendar';
 
 /**
  * Guscio dell'app (A0): routing su hash e caricamento dati. Ogni schermata è di un altro agente.
- * Rotte: `#/` scelta del membro · `#/u/:username` storia · `#/oscar` premi · `#/dev/story` demo del player.
+ * Rotte: `#/` scelta del membro · `#/u/:username` storia · `#/oscar` premi.
+ * Rotte di sviluppo senza API: `#/dev/story` (A6) · `#/dev/cards` (A7) · `#/dev/calendar` (A8).
  */
 
 type Route =
   | { name: 'home' }
   | { name: 'story'; username: string }
   | { name: 'oscar' }
-  | { name: 'dev-story' };
+  | { name: 'dev-story' }
+  | { name: 'dev-cards' }
+  | { name: 'dev-calendar' };
 
 function parseRoute(hash: string): Route {
   const path = hash.replace(/^#/, '') || '/';
@@ -30,6 +33,8 @@ function parseRoute(hash: string): Route {
   if (story?.[1]) return { name: 'story', username: decodeURIComponent(story[1]) };
   if (path === '/oscar') return { name: 'oscar' };
   if (path === '/dev/story') return { name: 'dev-story' };
+  if (path === '/dev/cards') return { name: 'dev-cards' };
+  if (path === '/dev/calendar') return { name: 'dev-calendar' };
   return { name: 'home' };
 }
 
@@ -149,6 +154,8 @@ export function App() {
   const health = useLoad((s) => api.health(s), []);
 
   if (route.name === 'dev-story') return <StoryDemo />;
+  if (route.name === 'dev-cards') return <CardsDemo />;
+  if (route.name === 'dev-calendar') return <CalendarDemo />;
   if (health.error) return <ErrorView message={health.error} onRetry={health.retry} />;
   if (!health.data) return <Loading />;
 

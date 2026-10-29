@@ -12,6 +12,11 @@ export const buildStoryCards: BuildStoryCards = ({ stats }) => [
   },
 ];
 
+/** Tutte le card con `exampleWrappedStats`, servite su `#/dev/cards` per sviluppo e test. */
+export function CardsDemo() {
+  return <p>CardsDemo: stub di A0</p>;
+}
+
 export function CardExportButton({ fileName }: CardExportButtonProps) {
   return (
     <button type="button" disabled data-file-name={fileName}>
