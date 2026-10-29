@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { computeCalendarStats } from '@git-wrapped/stats/calendar';
-import { CalendarParseError, parseIcs } from './parse';
+import { CalendarParseError, decodeIcs, parseIcs } from './parse';
 import { MAX_FILE_BYTES, type WorkerRequest, type WorkerResponse } from './protocol';
 
 /**
@@ -17,7 +17,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     if (file.size > MAX_FILE_BYTES) {
       throw new CalendarParseError('too_large', 'Il file supera la dimensione massima consentita.');
     }
-    const text = await file.text();
+    const text = decodeIcs(new Uint8Array(await file.arrayBuffer()));
     let last = 0;
     const events = parseIcs(text, year, {
       timezone,

@@ -2,7 +2,7 @@ import { calendarEventSchema } from '@git-wrapped/contracts';
 import { sampleIcs } from '@git-wrapped/fixtures';
 import { computeCalendarStats } from '@git-wrapped/stats/calendar';
 import { describe, expect, it } from 'vitest';
-import { CalendarParseError, MAX_FILE_BYTES, parseIcs } from './parse';
+import { CalendarParseError, MAX_FILE_BYTES, decodeIcs, parseIcs } from './parse';
 import {
   allDayIcs,
   declinedFallbackIcs,
@@ -134,5 +134,59 @@ describe('parseIcs', () => {
     expect(stats.declinedInvites).toBeGreaterThan(0);
     expect(stats.teamsCallShare).toBeGreaterThan(0);
     expect(stats.recurringShare).toBeGreaterThan(0);
+  });
+});
+
+describe('export reali di Outlook e altri programmi', () => {
+  const base = parseIcs(teamsIcs, 2026);
+  const addEvent = (body: string) =>
+    teamsIcs.replace(/END:VCALENDAR\s*$/, `${body}\r\nEND:VCALENDAR\r\n`);
+  const extra = [
+    'BEGIN:VEVENT',
+    'UID:extra-1',
+    'DTSTART:20260310T090000Z',
+    'DTEND:20260310T100000Z',
+  ];
+
+  it.each([
+    ['BOM UTF-8 in testa', `\uFEFF${teamsIcs}`],
+    ['a capo solo CR', teamsIcs.replace(/\r?\n/g, '\r')],
+    ['a capo solo LF', teamsIcs.replace(/\r\n/g, '\n')],
+    ['spazi in fondo alle righe', teamsIcs.replace(/\r?\n/g, ' \r\n')],
+    ['righe vuote tra gli eventi', teamsIcs.replace(/\r?\nBEGIN:VEVENT/g, '\r\n\r\nBEGIN:VEVENT')],
+  ])('%s: stessi eventi del file pulito', (_name, ics) => {
+    expect(parseIcs(ics, 2026)).toEqual(base);
+  });
+
+  it.each([
+    ['testo andato a capo senza piegatura', [...extra, 'DESCRIPTION:prima riga', 'seconda riga']],
+    [
+      'virgolette non chiuse in un partecipante',
+      [...extra, 'ATTENDEE;CN="Rossi, Mario;ROLE=REQ-PARTICIPANT:mailto:a@example.com'],
+    ],
+  ])('%s: l evento si legge', (_name, lines) => {
+    const ev = parseIcs(addEvent([...lines, 'END:VEVENT'].join('\r\n')), 2026);
+    expect(ev).toHaveLength(base.length + 1);
+  });
+
+  it('un evento rotto si salta senza scartare il resto del file', () => {
+    const ev = parseIcs(addEvent('BEGIN:VEVENT\r\nUID:rotto\r\nDTSTART:\r\nEND:VEVENT'), 2026);
+    expect(ev).toEqual(base);
+  });
+
+  it('decodifica UTF-8, UTF-16 con e senza BOM e Windows-1252', () => {
+    const text = 'BEGIN:VCALENDAR\r\nX-WR-CALNAME:Caffè\r\nEND:VCALENDAR';
+    const le = Buffer.from(text, 'utf16le');
+    const be = Buffer.from(le).swap16();
+    expect(decodeIcs(new Uint8Array(Buffer.from(text, 'utf8')))).toBe(text);
+    expect(
+      decodeIcs(
+        new Uint8Array(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(text)])),
+      ),
+    ).toBe(text);
+    expect(decodeIcs(new Uint8Array(Buffer.concat([Buffer.from([0xff, 0xfe]), le])))).toBe(text);
+    expect(decodeIcs(new Uint8Array(Buffer.concat([Buffer.from([0xfe, 0xff]), be])))).toBe(text);
+    expect(decodeIcs(new Uint8Array(le))).toBe(text);
+    expect(decodeIcs(new Uint8Array(Buffer.from(text, 'latin1')))).toBe(text);
   });
 });
