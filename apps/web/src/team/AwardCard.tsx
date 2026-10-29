@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { TeamAward } from '@git-wrapped/contracts';
 import { copy, format } from '@git-wrapped/copy';
-import { emojiGlyph, fmt } from '../cards/format';
+import { awardValue, emojiGlyph, joinNames } from '../cards/format';
 
 /** Sfondo red carpet usato sia a video sia nel PNG. */
 export const CARPET_BACKGROUND =
@@ -29,8 +29,8 @@ export function awardTexts(award: TeamAward) {
         ? emojiGlyph(award.detail)
         : award.detail;
   const vars = {
-    winner: award.winners.map((w) => w.displayName).join(' & '),
-    value: fmt(award.value),
+    winner: joinNames(award.winners.map((w) => w.displayName)),
+    value: awardValue(award),
     ...(detail === undefined ? {} : { detail }),
   };
   return {

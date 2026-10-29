@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { ThemeName } from '../shared/types';
-import { THEMES } from '../theme';
+import { AnimatedNumber, THEMES } from '../theme';
 import { fitSize, fmt } from './format';
-import { useCountUp } from './motion';
 
 /**
  * Primitive grafiche delle card. Tutte le misure sono in `cqw` (1cqw = 1% della larghezza della card)
@@ -110,9 +109,11 @@ interface BigNumberProps {
   suffix?: string;
 }
 
-/** Numero grande che conta fino al valore; si adatta a numeri a 7 cifre. */
+/**
+ * Numero grande che conta fino al valore (con `AnimatedNumber` del tema di A6: rispetta
+ * `prefers-reduced-motion` ed `exporting`); si adatta a numeri a 7 cifre.
+ */
 export function BigNumber({ value, exporting, width = 84, max = 26, suffix = '' }: BigNumberProps) {
-  const shown = useCountUp(value, exporting);
   const finalText = `${fmt(value)}${suffix}`;
   return (
     <div
@@ -128,7 +129,7 @@ export function BigNumber({ value, exporting, width = 84, max = 26, suffix = '' 
         ...wrapText,
       }}
     >
-      {fmt(Math.round(shown))}
+      <AnimatedNumber value={value} exporting={exporting} format={(n) => fmt(Math.round(n))} />
       {suffix}
     </div>
   );

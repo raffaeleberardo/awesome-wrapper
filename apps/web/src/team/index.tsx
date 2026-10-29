@@ -90,7 +90,7 @@ export function MemberPicker({ members, year, demoMode, onPick, onOpenOscar }: M
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Cerca"
+            aria-label={copy.ui.search_members}
             placeholder="🔍"
             style={{
               font: 'inherit',
@@ -247,14 +247,14 @@ export function OscarNight({ awards, onBack }: OscarNightProps) {
             gap: 8,
             fontSize: 14,
           }}
-          aria-label={`${fmt(awards.teamSize)} · ${fmt(tt.commits)} commit · ${fmt(tt.mergeRequestsMerged)} MR · ${fmt(tt.pipelines)} pipeline · ${fmt(tt.emojiGiven)} emoji`}
+          aria-label={`${fmt(awards.teamSize)} · ${fmt(tt.commits)} ${copy.ui.label_commits} · ${fmt(tt.mergeRequestsMerged)} ${copy.ui.label_mrs_merged} · ${fmt(tt.pipelines)} ${copy.ui.label_pipelines} · ${fmt(tt.emojiGiven)} ${copy.ui.label_emoji}`}
         >
           {[
             [fmt(awards.teamSize), '👥'],
-            [fmt(tt.commits), 'commit'],
-            [fmt(tt.mergeRequestsMerged), 'MR'],
-            [fmt(tt.pipelines), 'pipeline'],
-            [fmt(tt.emojiGiven), 'emoji'],
+            [fmt(tt.commits), copy.ui.label_commits],
+            [fmt(tt.mergeRequestsMerged), copy.ui.label_mrs_merged],
+            [fmt(tt.pipelines), copy.ui.label_pipelines],
+            [fmt(tt.emojiGiven), copy.ui.label_emoji],
           ].map(([v, l]) => (
             <li
               key={l}

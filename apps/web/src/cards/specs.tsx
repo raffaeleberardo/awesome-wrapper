@@ -1,9 +1,19 @@
 import { useEffect, type ReactNode } from 'react';
-import type { CardId } from '@git-wrapped/contracts';
+import type { CardId, UiKey } from '@git-wrapped/contracts';
 import type { CalendarStats, WrappedStats } from '@git-wrapped/contracts';
 import { copy, format, horoscope } from '@git-wrapped/copy';
 import type { ThemeName } from '../shared/types';
-import { emojiGlyph, fmt, fmt1, fmt2, hourLabel, pct, shortDate, WEEKDAY_NAMES } from './format';
+import {
+  badgeValue,
+  emojiGlyph,
+  fmt,
+  fmt1,
+  fmt2,
+  hourLabel,
+  pct,
+  shortDate,
+  WEEKDAY_NAMES,
+} from './format';
 import { fireConfetti } from './confetti';
 import {
   Bar,
@@ -22,7 +32,7 @@ import {
 /**
  * Una specifica per card, nell'ordine di `CARD_IDS`. Ogni specifica dice quali dati legge, che tema usa,
  * quanto dura, quali "fatti" finiscono nell'`ariaLabel` e come si disegna il corpo.
- * Le etichette dei numeri (commit, MR, righe...) sono etichette tecniche, non testi del catalogo.
+ * Le etichette dei numeri vengono dal catalogo testi (`copy.ui.label_*`, `contracts-v2`).
  */
 
 export interface CardContext {
@@ -47,6 +57,9 @@ export interface CardSpec {
   /** Se la card ha senso senza dati: false → mostra lo stato vuoto gentile. */
   hasData: (ctx: CardContext) => boolean;
 }
+
+const ui = copy.ui;
+const uiv = (key: UiKey, value: string) => format('ui', copy.ui[key], { value });
 
 const pick = <T,>(list: T[], seed: number): T | undefined =>
   list.length > 0 ? list[(seed >>> 0) % list.length] : undefined;
@@ -141,16 +154,16 @@ export const CARD_SPECS: CardSpec[] = [
     Body: ({ ctx: { stats: s }, exporting }) => (
       <>
         <BigNumber value={s.totals.commits} exporting={exporting} suffix="" />
-        <div style={{ fontSize: '4cqw', opacity: 0.85 }}>commit</div>
+        <div style={{ fontSize: '4cqw', opacity: 0.85 }}>{ui.label_commits}</div>
         <TileGrid>
-          <Tile value={`+${fmt(s.totals.linesAdded)}`} label="righe +" />
-          <Tile value={`−${fmt(s.totals.linesDeleted)}`} label="righe −" />
-          <Tile value={fmt(s.totals.mergeRequestsMerged)} label="MR" />
-          <Tile value={fmt(s.totals.approvalsGiven)} label="approvazioni" />
-          <Tile value={fmt(s.totals.notesWritten)} label="note" />
-          <Tile value={fmt(s.totals.pipelines)} label="pipeline" />
-          <Tile value={fmt(s.totals.deployments)} label="deploy" />
-          <Tile value={fmt(s.totals.activeDays)} label="giorni" />
+          <Tile value={`+${fmt(s.totals.linesAdded)}`} label={ui.label_lines_added} />
+          <Tile value={`−${fmt(s.totals.linesDeleted)}`} label={ui.label_lines_deleted} />
+          <Tile value={fmt(s.totals.mergeRequestsMerged)} label={ui.label_mrs_merged} />
+          <Tile value={fmt(s.totals.approvalsGiven)} label={ui.label_approvals} />
+          <Tile value={fmt(s.totals.notesWritten)} label={ui.label_notes} />
+          <Tile value={fmt(s.totals.pipelines)} label={ui.label_pipelines} />
+          <Tile value={fmt(s.totals.deployments)} label={ui.label_deploys} />
+          <Tile value={fmt(s.totals.activeDays)} label={ui.label_active_days} />
         </TileGrid>
       </>
     ),
@@ -369,10 +382,10 @@ export const CARD_SPECS: CardSpec[] = [
           </div>
           <BigNumber value={stats.duet.interactions} exporting={exporting} max={20} />
           <TileGrid>
-            <Tile value={fmt(stats.duet.via.approvals)} label="approvazioni" size={6} />
-            <Tile value={fmt(stats.duet.via.reviews)} label="review" size={6} />
-            <Tile value={fmt(stats.duet.via.notes)} label="note" size={6} />
-            <Tile value={fmt(stats.duet.via.emoji)} label="emoji" size={6} />
+            <Tile value={fmt(stats.duet.via.approvals)} label={ui.label_approvals} size={6} />
+            <Tile value={fmt(stats.duet.via.reviews)} label={ui.label_reviews} size={6} />
+            <Tile value={fmt(stats.duet.via.notes)} label={ui.label_notes} size={6} />
+            <Tile value={fmt(stats.duet.via.emoji)} label={ui.label_emoji} size={6} />
           </TileGrid>
         </>
       ),
@@ -432,7 +445,8 @@ export const CARD_SPECS: CardSpec[] = [
             <>
               <Glyph size={26}>{emojiGlyph(top.name)}</Glyph>
               <div style={{ fontSize: '4cqw', ...wrapText }}>
-                {fmt(stats.totals.emojiGiven)} / {fmt(stats.totals.emojiReceived)}
+                {fmt(stats.totals.emojiGiven)} / {fmt(stats.totals.emojiReceived)}{' '}
+                {ui.label_emoji_given_received}
               </div>
             </>
           ) : null}
@@ -474,11 +488,15 @@ export const CARD_SPECS: CardSpec[] = [
             </div>
           ) : null}
           <TileGrid columns={2}>
-            <Tile value={fmt(Math.round(m.averageLength))} label="media" size={7} />
-            <Tile value={fmt(m.longestLength)} label="max" size={7} />
-            <Tile value={fmt(m.fixCount)} label="fix" size={7} />
-            <Tile value={fmt(m.wipCount)} label="wip" size={7} />
-            <Tile value={fmt(m.emojiCount)} label="emoji" size={7} />
+            <Tile
+              value={fmt(Math.round(m.averageLength))}
+              label={ui.label_message_average}
+              size={7}
+            />
+            <Tile value={fmt(m.longestLength)} label={ui.label_message_longest} size={7} />
+            <Tile value={fmt(m.fixCount)} label={ui.label_message_fix} size={7} />
+            <Tile value={fmt(m.wipCount)} label={ui.label_message_wip} size={7} />
+            <Tile value={fmt(m.emojiCount)} label={ui.label_message_emoji} size={7} />
           </TileGrid>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2cqw', minWidth: 0 }}>
             {m.topWords.slice(0, 6).map((w, i) => (
@@ -520,7 +538,7 @@ export const CARD_SPECS: CardSpec[] = [
         <>
           <BigNumber value={p.failed} exporting={exporting} max={24} />
           <div style={{ fontSize: '4cqw', opacity: 0.85 }}>
-            / {fmt(p.total)} pipeline
+            {uiv('label_pipelines_failed_of', fmt(p.total))}
             {p.successRate === null ? '' : ` · ${pct(p.successRate)}`}
           </div>
           {p.graveyard.map((g, i) => (
@@ -570,7 +588,7 @@ export const CARD_SPECS: CardSpec[] = [
           <BigNumber value={stats.ghostMrs.count} exporting={exporting} max={30} />
           {stats.ghostMrs.oldestDays !== null ? (
             <div style={{ fontSize: '5cqw', fontWeight: 700, ...wrapText }}>
-              {fmt(stats.ghostMrs.oldestDays)} giorni
+              {uiv('label_days', fmt(stats.ghostMrs.oldestDays))}
             </div>
           ) : null}
         </>
@@ -632,34 +650,40 @@ export const CARD_SPECS: CardSpec[] = [
       ) : (
         <>
           <BigNumber value={Math.round(c.meetingHours)} exporting={exporting} max={26} />
-          <div style={{ fontSize: '4cqw', opacity: 0.85 }}>ore · {fmt(c.meetings)} riunioni</div>
+          <div style={{ fontSize: '4cqw', opacity: 0.85 }}>
+            {ui.label_meeting_hours} · {uiv('label_meetings', fmt(c.meetings))}
+          </div>
           <TileGrid>
-            <Tile value={fmt(c.declinedInvites)} label="rifiutati" size={7} />
+            <Tile value={fmt(c.declinedInvites)} label={ui.label_declined_invites} size={7} />
             <Tile
               value={c.longestMeeting ? `${fmt(c.longestMeeting.minutes)}′` : '—'}
-              label="più lunga"
+              label={ui.label_longest_meeting}
               size={7}
             />
             <Tile
               value={c.mostCrowded ? fmt(c.mostCrowded.attendees) : '—'}
-              label="più affollata"
+              label={ui.label_most_crowded}
               size={7}
             />
             <Tile
               value={c.longestBackToBack ? fmt(c.longestBackToBack.meetings) : '—'}
-              label="di fila"
+              label={ui.label_back_to_back}
               size={7}
             />
-            <Tile value={fmt(c.fridayAfternoonMeetings)} label="venerdì 14+" size={7} />
+            <Tile
+              value={fmt(c.fridayAfternoonMeetings)}
+              label={ui.label_friday_afternoon}
+              size={7}
+            />
             <Tile
               value={c.teamsCallShare === null ? '—' : pct(c.teamsCallShare)}
-              label="Teams"
+              label={ui.label_teams_share}
               size={7}
             />
           </TileGrid>
           {c.meetingsPerCommit !== null ? (
             <div style={{ fontSize: '4.4cqw', fontWeight: 700 }}>
-              {fmt2(c.meetingsPerCommit)} riunioni / commit
+              {fmt2(c.meetingsPerCommit)} {ui.label_meetings_per_commit}
             </div>
           ) : null}
         </>
@@ -673,7 +697,7 @@ export const CARD_SPECS: CardSpec[] = [
     facts: ({ stats }) =>
       stats.badges.map((b) => {
         const c = copy.badges[b.id];
-        return `${c.title}: ${format('badges', c.description, { value: fmt2(b.value) })}`;
+        return `${c.title}: ${format('badges', c.description, { value: badgeValue(b.id, b.value) })}`;
       }),
     hasData: ({ stats }) => stats.badges.length > 0,
     Body: BadgesBody,
@@ -789,10 +813,10 @@ export const CARD_SPECS: CardSpec[] = [
             {stats.member.displayName}
           </div>
           <TileGrid>
-            <Tile value={fmt(t.commits)} label="commit" />
-            <Tile value={fmt(t.mergeRequestsMerged)} label="MR" />
-            <Tile value={fmt(t.activeDays)} label="giorni" />
-            <Tile value={fmt(stats.badges.length)} label="badge" />
+            <Tile value={fmt(t.commits)} label={ui.label_commits} />
+            <Tile value={fmt(t.mergeRequestsMerged)} label={ui.label_mrs_merged} />
+            <Tile value={fmt(t.activeDays)} label={ui.label_active_days} />
+            <Tile value={fmt(stats.badges.length)} label={ui.label_badges} />
           </TileGrid>
           <div style={{ display: 'flex', alignItems: 'center', gap: '3cqw', minWidth: 0 }}>
             <span aria-hidden="true" style={{ fontSize: '12cqw', lineHeight: 1 }}>
@@ -871,7 +895,7 @@ function BadgesBody({ ctx: { stats }, exporting }: BodyProps) {
               </div>
               {detailed ? (
                 <div style={{ ...clamp(3), fontSize: '3.8cqw', marginTop: '1cqw', opacity: 0.9 }}>
-                  {format('badges', c.description, { value: fmt2(b.value) })}
+                  {format('badges', c.description, { value: badgeValue(b.id, b.value) })}
                 </div>
               ) : null}
             </div>

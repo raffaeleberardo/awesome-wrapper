@@ -1,3 +1,5 @@
+import type { BadgeId, TeamAward } from '@git-wrapped/contracts';
+
 const nf = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 });
 const nf1 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
 const nf2 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
@@ -84,4 +86,21 @@ export function hashString(s: string): number {
 export function fitSize(text: string, width: number, max: number, min = 3): number {
   const len = Math.max(1, text.length);
   return Math.max(min, Math.min(max, (width / len) * 1.75));
+}
+
+/** Badge il cui `value` è una quota in [0, 1] (vedi `packages/stats/BADGES.md`). */
+const SHARE_BADGES: ReadonlySet<BadgeId> = new Set<BadgeId>(['night_owl', 'early_bird']);
+
+/** `value` di un badge pronto per il segnaposto `{value}`: quote in %, il resto con 1 decimale. */
+export const badgeValue = (id: BadgeId, value: number): string =>
+  SHARE_BADGES.has(id) ? pct(value) : fmt1(value);
+
+/** `value` di un premio per `{value}`: rapporto con 2 decimali, giorni e conteggi con 1 al più. */
+export const awardValue = (award: Pick<TeamAward, 'id' | 'value'>): string =>
+  award.id === 'golden_broom' ? fmt2(award.value) : fmt1(award.value);
+
+/** Elenco di nomi all'italiana: «A», «A e B», «A, B e C». */
+export function joinNames(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;
 }
