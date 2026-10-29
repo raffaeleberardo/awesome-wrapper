@@ -11,9 +11,8 @@ demo: ## Avvia con i dati finti, nessuna configurazione (http://localhost:8080)
 	@echo "Git Wrapped (demo) su http://localhost:8080"
 
 # `make up` usa sempre i dati reali: DEMO_MODE=false prevale sul valore scritto in .env.
-up: ## Avvia con i dati GitLab reali da .env
-	@test -f .env || { echo "Manca .env: copia .env.example in .env e compilalo (cp .env.example .env)."; exit 1; }
-	@grep -Eq '^GITLAB_TOKEN=.+' .env || { echo "Manca GITLAB_TOKEN in .env (vedi docs/gitlab-token.md). Per provare senza token: make demo."; exit 1; }
+# URL, gruppo e token si inseriscono nella pagina; con GITLAB_TOKEN in .env la si salta.
+up: ## Avvia con i dati GitLab reali (impostazioni dalla pagina o da .env)
 	DEMO_MODE=false $(COMPOSE) up -d --build --wait
 	@echo "Git Wrapped su http://localhost:8080"
 

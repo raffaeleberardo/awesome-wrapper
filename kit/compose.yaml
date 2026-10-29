@@ -1,5 +1,6 @@
 # Git Wrapped, kit pronto: scarica le immagini già costruite, niente codice e niente build.
-# Uso: vedi LEGGIMI.txt. Le variabili si leggono dal file .env in questa cartella.
+# Uso: vedi LEGGIMI.txt. URL, gruppo e token si inseriscono nella pagina dell'app; il file .env
+# in questa cartella è facoltativo (opzioni avanzate, vedi env.example).
 name: git-wrapped
 
 x-logging: &logging
@@ -12,8 +13,8 @@ services:
   api:
     image: ghcr.io/raffaeleberardo/git-wrapped-api:latest
     environment:
-      # Senza .env parte la demo con dati inventati.
-      DEMO_MODE: ${DEMO_MODE:-true}
+      # Senza .env si apre la schermata iniziale (con anche la demo a dati inventati).
+      DEMO_MODE: ${DEMO_MODE:-false}
       GITLAB_URL: ${GITLAB_URL:-https://gitlab.com}
       GITLAB_TOKEN: ${GITLAB_TOKEN:-}
       GITLAB_GROUP: ${GITLAB_GROUP:-}

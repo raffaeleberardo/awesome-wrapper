@@ -1,8 +1,21 @@
-# Contratti — `contracts-v3`
+# Contratti — `contracts-v4`
 
 I contratti vivono in `packages/contracts` (schemi `zod` + tipi TypeScript inferiti) e sono
-**congelati al tag `contracts-v3`** (`CONTRACTS_VERSION = 3`). Le richieste di cambiamento vanno
+**congelati al tag `contracts-v4`** (`CONTRACTS_VERSION = 4`). Le richieste di cambiamento vanno
 in [`contract-requests.md`](./contract-requests.md).
+
+**Novità di `contracts-v4`** rispetto a `contracts-v3`: URL di GitLab, gruppo e token si
+inseriscono dalla schermata iniziale dell'app; il `.env` diventa facoltativo.
+
+- Nuova rotta `/api/settings`: `POST` con `settingsRequestSchema` (`{ mode: 'demo' }` oppure
+  `{ mode: 'gitlab', gitlabUrl, group, token }`) risponde `SettingsResponse` dopo aver verificato
+  utente e gruppo con GitLab; `DELETE` dimentica le impostazioni. Entrambe richiedono
+  l'intestazione `SETTINGS_HEADER` (`x-git-wrapped: 1`), che un altro sito non può inviare senza
+  un preflight CORS: protezione anti-CSRF per un'app su `localhost`.
+- `HealthResponse.configured`: `false` finché non ci sono impostazioni; `demoMode` riflette la
+  sorgente attiva.
+- Nuovo codice di errore `not_configured` (409) per `GET /api/me` senza impostazioni.
+- `UiKey`: aggiunte le chiavi `setup_*` della schermata iniziale e `change_settings`.
 
 **Novità di `contracts-v3`** rispetto a `contracts-v2` (non retrocompatibili): l'app mostra solo il
 wrapped del proprietario del token GitLab, che deve essere un Personal Access Token.
@@ -86,10 +99,12 @@ Le soglie sono di A3 e vanno documentate in `packages/stats/BADGES.md`.
 
 ## API HTTP
 
-| Rotta               | Risposta                      | Note                                                       |
-| ------------------- | ----------------------------- | ---------------------------------------------------------- |
-| `GET /api/health`   | `HealthResponse`              | Usata dall'healthcheck del container                       |
-| `GET /api/me?year=` | `MeResponse` (`WrappedStats`) | Wrapped del proprietario del token (`GET /user` su GitLab) |
+| Rotta                  | Risposta                      | Note                                                                           |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
+| `GET /api/health`      | `HealthResponse`              | Usata dall'healthcheck del container                                           |
+| `GET /api/me?year=`    | `MeResponse` (`WrappedStats`) | Wrapped del proprietario del token (`GET /user` su GitLab)                     |
+| `POST /api/settings`   | `SettingsResponse`            | Imposta GitLab o la demo dalla schermata iniziale; richiede `x-git-wrapped: 1` |
+| `DELETE /api/settings` | `204`                         | Dimentica le impostazioni; richiede `x-git-wrapped: 1`                         |
 
 Non esiste una rotta per leggere le statistiche di altre persone. In modalità demo `GET /api/me`
 restituisce un membro fisso del team finto.
@@ -98,10 +113,11 @@ Errori: corpo `ApiError` con un `message` in italiano senza dati personali e `co
 
 | `code`           | Stato | Quando                                                                  |
 | ---------------- | ----- | ----------------------------------------------------------------------- |
-| `bad_request`    | 400   | Query non valida (es. `year` fuori intervallo)                          |
+| `bad_request`    | 400   | Query o impostazioni non valide, oppure manca `x-git-wrapped`           |
 | `unauthorized`   | 401   | Token mancante, non valido, scaduto o revocato                          |
 | `bot_token`      | 403   | Il token appartiene a un bot (Group/Project Access Token): serve un PAT |
-| `not_found`      | 404   | L'utente del token non ha attività leggibili nei gruppi letti           |
+| `not_found`      | 404   | Nessuna attività leggibile, o gruppo inesistente (in `/api/settings`)   |
+| `not_configured` | 409   | `GET /api/me` prima di impostare GitLab o la demo                       |
 | `rate_limited`   | 429   | GitLab limita le richieste                                              |
 | `upstream_error` | 502   | GitLab non risponde come previsto                                       |
 | `internal`       | 500   | Errore imprevisto del server                                            |
@@ -492,7 +508,8 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
   "status": "ok",
   "demoMode": true,
   "year": 2026,
-  "contractsVersion": 3
+  "contractsVersion": 4,
+  "configured": true
 }
 ```
 

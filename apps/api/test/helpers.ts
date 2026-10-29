@@ -4,7 +4,7 @@ import { exampleRawActivity, exampleWrappedStats } from '@git-wrapped/contracts/
 import type { Member, RawActivity } from '@git-wrapped/contracts';
 import type { AppConfig } from '../src/config';
 import { createLogger } from '../src/logger';
-import { buildServer, type ComputeFns } from '../src/server';
+import { buildServer, type ComputeFns, type ServerDeps } from '../src/server';
 import type { ActivitySource } from '../src/source';
 
 export const testConfig: AppConfig = {
@@ -73,16 +73,24 @@ export function makeLogSink() {
 }
 
 export function makeApp(
-  opts: { source?: ReturnType<typeof makeSource>; config?: Partial<AppConfig> } = {},
+  opts: {
+    source?: ReturnType<typeof makeSource>;
+    /** Nessuna sorgente iniziale: l'app aspetta la schermata iniziale. */
+    unconfigured?: boolean;
+    createSource?: ServerDeps['createSource'];
+    config?: Partial<AppConfig>;
+  } = {},
 ) {
   const source = opts.source ?? makeSource();
+  const createSource = vi.fn<ServerDeps['createSource']>(opts.createSource ?? (() => makeSource()));
   const compute = makeCompute();
   const sink = makeLogSink();
   const app = buildServer({
-    source,
+    source: opts.unconfigured ? null : source,
+    createSource,
     compute,
     config: { ...testConfig, ...opts.config },
     logger: createLogger('info', sink.stream),
   });
-  return { app, source, compute, sink };
+  return { app, source, createSource, compute, sink };
 }

@@ -2,23 +2,24 @@ GIT WRAPPED - il tuo anno su GitLab, in stile Spotify Wrapped
 ==============================================================
 
 L'app gira solo sul tuo computer e mostra solo il TUO wrapped, letto con il tuo token.
-Non manda i tuoi dati a nessuno: il token resta nel file .env di questa cartella.
+Non manda i tuoi dati a nessuno: il token resta su questo computer.
 
 Serve solo Docker Desktop (Mac, Windows o Linux): https://www.docker.com/products/docker-desktop/
 
 
-1) PROVA SUBITO LA DEMO (senza token)
--------------------------------------
+1) AVVIA L'APP
+--------------
 Apri un terminale in questa cartella e lancia:
 
     docker compose up -d
 
-Poi apri http://localhost:8080 nel browser. Vedrai il wrapped di una persona inventata.
+Poi apri http://localhost:8080 nel browser.
 
 
 2) CREA IL TUO TOKEN GITLAB
 ---------------------------
-Su GitLab: avatar in alto > Preferenze (Preferences) > Token di accesso (Access tokens)
+Nella pagina c'è il link "Crea il token su GitLab", già compilato. Oppure, su GitLab:
+avatar in alto > Preferenze (Preferences) > Token di accesso (Access tokens)
   - Nome: git-wrapped
   - Scadenza: breve (bastano pochi giorni)
   - Scope: solo "read_api"
@@ -26,22 +27,16 @@ Copia il token: GitLab lo mostra una volta sola.
 Serve un token PERSONALE: i token di gruppo o di progetto vengono rifiutati.
 
 
-3) METTI I TUOI DATI
---------------------
-Rinomina "env.example" in ".env" (con il punto davanti) e compila:
-  - GITLAB_URL   = indirizzo del GitLab aziendale
-  - GITLAB_TOKEN = il token creato al punto 2
-  - GITLAB_GROUP = facoltativo, il gruppo del tuo team
-Su Mac/Linux i file che iniziano con il punto sono nascosti: nel Finder premi Cmd+Shift+. per vederli.
-Da terminale: cp env.example .env
+3) INSERISCI I TUOI DATI NELLA PAGINA
+-------------------------------------
+  - Indirizzo di GitLab: quello che apri nel browser
+  - Gruppo: facoltativo, il gruppo del tuo team (es. team/backend)
+  - Token: quello creato al punto 2
+Premi "Entra nel mio wrapped". Il primo caricamento può durare qualche decina di secondi.
+Vuoi solo curiosare? "Prova con dati inventati".
 
-
-4) AVVIA CON I TUOI DATI
-------------------------
-    docker compose up -d --force-recreate
-
-Apri http://localhost:8080. Il primo caricamento può durare qualche decina di secondi.
-Se la pagina non si apre: docker compose logs api  (spiega cosa manca, senza mostrare il token).
+"Ricorda su questo browser" evita di reinserire il token al prossimo avvio.
+Non attivarlo su un computer condiviso.
 
 
 COMANDI UTILI
@@ -50,10 +45,14 @@ COMANDI UTILI
   Aggiornare l'app:      docker compose pull && docker compose up -d
   Vedere i log:          docker compose logs
 
+Il file env.example serve solo per opzioni avanzate (certificato aziendale, anno):
+leggi i commenti al suo interno.
+
 
 PRIVACY IN BREVE
 ----------------
-  - Il token è di sola lettura e resta nel tuo .env.
-  - Nessun database, niente scritto su disco: i dati stanno in memoria per 15 minuti.
+  - Il token è di sola lettura: lo usa solo l'app sul tuo computer, mai scritto su disco
+    (a meno che tu scelga "Ricorda su questo browser").
+  - Nessun database: i dati stanno in memoria per 15 minuti.
   - Il calendario Outlook (.ics, facoltativo) viene letto solo dal browser.
   - Quando hai finito puoi revocare il token da GitLab.

@@ -75,31 +75,20 @@ const timezone = optional.transform((v, ctx) => {
 
 /**
  * Schema dell'ambiente. I messaggi d'errore non contengono mai i valori (token compreso).
- * Con `DEMO_MODE=false` il token è obbligatorio: un Personal Access Token (scope `read_api`)
- * della persona di cui si mostra il wrapped. `GITLAB_GROUP` limita i gruppi letti; senza gruppo
- * si leggono tutti i gruppi del token.
+ * Tutto è facoltativo: senza `GITLAB_TOKEN` (e senza demo) URL, gruppo e token si inseriscono
+ * dalla schermata iniziale dell'app. Il token è un Personal Access Token (scope `read_api`)
+ * della persona di cui si mostra il wrapped; `GITLAB_GROUP` limita i gruppi letti.
  */
-const envSchema = z
-  .object({
-    DEMO_MODE: bool('DEMO_MODE', true),
-    GITLAB_URL: url,
-    GITLAB_TOKEN: optional,
-    GITLAB_GROUP: optional,
-    WRAPPED_YEAR: int('WRAPPED_YEAR', 2026, 2000, 2100),
-    TZ: timezone,
-    CACHE_TTL_MINUTES: int('CACHE_TTL_MINUTES', 15, 1, 1440),
-    GITLAB_CA_CERT: optional,
-  })
-  .superRefine((env, ctx) => {
-    if (env.DEMO_MODE || env.GITLAB_TOKEN) return;
-    ctx.addIssue({
-      code: 'custom',
-      message:
-        'Con DEMO_MODE=false serve anche: GITLAB_TOKEN ' +
-        '(un Personal Access Token con scope read_api). ' +
-        'Impostalo nel file .env oppure usa DEMO_MODE=true.',
-    });
-  });
+const envSchema = z.object({
+  DEMO_MODE: bool('DEMO_MODE', false),
+  GITLAB_URL: url,
+  GITLAB_TOKEN: optional,
+  GITLAB_GROUP: optional,
+  WRAPPED_YEAR: int('WRAPPED_YEAR', 2026, 2000, 2100),
+  TZ: timezone,
+  CACHE_TTL_MINUTES: int('CACHE_TTL_MINUTES', 15, 1, 1440),
+  GITLAB_CA_CERT: optional,
+});
 
 /**
  * `GITLAB_CA_CERT`: contenuto PEM inline (contiene `-----BEGIN`) oppure percorso di un
@@ -131,6 +120,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
     year: e.WRAPPED_YEAR,
     timezone: e.TZ,
     cacheTtlMinutes: e.CACHE_TTL_MINUTES,
-    gitlabCaCert: e.DEMO_MODE ? undefined : readCaCert(e.GITLAB_CA_CERT),
+    // Letto anche in demo: dalla schermata iniziale si può passare a un GitLab interno.
+    gitlabCaCert: readCaCert(e.GITLAB_CA_CERT),
   };
 }

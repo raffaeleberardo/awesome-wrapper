@@ -6,6 +6,7 @@ import {
   calendarStatsSchema,
   copyCatalogSchema,
   healthResponseSchema,
+  settingsRequestSchema,
   meResponseSchema,
   rawActivitySchema,
   wrappedStatsSchema,
@@ -56,5 +57,26 @@ describe('regole dei contratti', () => {
     expect(apiPaths.health()).toBe('/api/health');
     expect(apiPaths.me()).toBe('/api/me');
     expect(apiPaths.me(2026)).toBe('/api/me?year=2026');
+    expect(apiPaths.settings()).toBe('/api/settings');
+  });
+
+  it('valida le impostazioni della schermata iniziale', () => {
+    expect(settingsRequestSchema.parse({ mode: 'demo' })).toEqual({ mode: 'demo' });
+    expect(
+      settingsRequestSchema.parse({
+        mode: 'gitlab',
+        gitlabUrl: ' https://gitlab.example.test ',
+        token: ' glpat-finto ',
+      }),
+    ).toEqual({
+      mode: 'gitlab',
+      gitlabUrl: 'https://gitlab.example.test',
+      group: '',
+      token: 'glpat-finto',
+    });
+    const bad = (v: object) => settingsRequestSchema.safeParse({ mode: 'gitlab', ...v }).success;
+    expect(bad({ gitlabUrl: 'ftp://gitlab.example.test', token: 'x' })).toBe(false);
+    expect(bad({ gitlabUrl: 'gitlab.example.test', token: 'x' })).toBe(false);
+    expect(bad({ gitlabUrl: 'https://gitlab.example.test', token: '   ' })).toBe(false);
   });
 });

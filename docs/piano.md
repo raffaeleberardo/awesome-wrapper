@@ -199,9 +199,9 @@ services:
 
 | Variabile           | Default              | Uso                                                                                    |
 | ------------------- | -------------------- | -------------------------------------------------------------------------------------- |
-| `DEMO_MODE`         | `true`               | Usa i dati finti; diventa `false` quando si mette il token                             |
+| `DEMO_MODE`         | `false`              | `true`: parte subito la demo. Da `contracts-v4` la demo si sceglie anche dalla pagina  |
 | `GITLAB_URL`        | `https://gitlab.com` | Istanza GitLab, anche self-hosted                                                      |
-| `GITLAB_TOKEN`      | vuoto                | Personal Access Token con scope `read_api` (da `contracts-v3`)                         |
+| `GITLAB_TOKEN`      | vuoto                | PAT `read_api`; facoltativo da `contracts-v4` (si inserisce nella schermata iniziale)  |
 | `GITLAB_GROUP`      | vuoto                | Facoltativo: percorso del gruppo, es. `azienda/team`; vuoto = tutti i gruppi del token |
 | `WRAPPED_YEAR`      | `2026`               | Anno raccontato                                                                        |
 | `TZ`                | `Europe/Rome`        | Fuso per orari e badge notturni                                                        |

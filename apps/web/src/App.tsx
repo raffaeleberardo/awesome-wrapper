@@ -3,6 +3,7 @@ import type { CalendarStats, HealthResponse, WrappedStats } from '@git-wrapped/c
 import { copy } from '@git-wrapped/copy';
 import { api, ApiRequestError } from './shared/api';
 import { LoadingScreen } from './shared/LoadingScreen';
+import { loadSettings, SetupScreen } from './setup';
 import { StoryDemo, StoryPlayer } from './story';
 import { buildStoryCards, CardExportButton, CardsDemo } from './cards';
 import { CalendarDemo, CalendarUpload } from './calendar';
@@ -10,7 +11,7 @@ import { CalendarDemo, CalendarUpload } from './calendar';
 /**
  * Guscio dell'app (A0): routing su hash e caricamento dati. Ogni schermata è di un altro agente.
  * L'app mostra solo il wrapped del proprietario del token GitLab (`GET /api/me`): ogni rotta che
- * non è di sviluppo apre il suo percorso, calendario (facoltativo) → storia.
+ * non è di sviluppo apre il suo percorso, impostazioni (se mancano) → calendario (facoltativo) → storia.
  * Rotte di sviluppo senza API: `#/dev/story` (A6) · `#/dev/cards` (A7) · `#/dev/calendar` (A8).
  */
 
@@ -36,26 +37,54 @@ function useRoute(): Route {
   return parseRoute(hash);
 }
 
-/** Errori del token: riprovare non serve, bisogna sistemare la configurazione. */
-const TOKEN_ERRORS: ReadonlySet<string> = new Set(['unauthorized', 'bot_token']);
+/** Errori di configurazione: riprovare non serve, bisogna cambiare URL, gruppo o token. */
+const SETTINGS_ERRORS: ReadonlySet<string> = new Set([
+  'unauthorized',
+  'bot_token',
+  'not_configured',
+]);
 
 interface LoadError {
   message: string;
   code?: string;
 }
 
-function ErrorView({ error, onRetry }: { error: LoadError; onRetry: () => void }) {
-  const tokenError = error.code !== undefined && TOKEN_ERRORS.has(error.code);
+function ErrorView({
+  error,
+  onRetry,
+  onChangeSettings,
+}: {
+  error: LoadError;
+  onRetry: () => void;
+  onChangeSettings?: () => void;
+}) {
+  const settingsError = error.code !== undefined && SETTINGS_ERRORS.has(error.code);
   return (
     <div role="alert" className="grid h-full place-items-center gap-4 p-6 text-center">
-      <p>{error.message}</p>
-      {tokenError ? (
-        <p className="text-sm opacity-80">{copy.ui.error_token_hint}</p>
-      ) : (
-        <button type="button" onClick={onRetry}>
-          {copy.ui.retry}
-        </button>
-      )}
+      <div className="grid max-w-md gap-4">
+        <p className="text-lg font-semibold">{error.message}</p>
+        {settingsError && <p className="text-sm opacity-80">{copy.ui.error_token_hint}</p>}
+        <div className="flex flex-wrap justify-center gap-3">
+          {onChangeSettings && (
+            <button
+              type="button"
+              onClick={onChangeSettings}
+              className="gw-control rounded-full bg-[#d4ff3a] px-5 py-2.5 font-bold text-[#101500]"
+            >
+              {copy.ui.change_settings}
+            </button>
+          )}
+          {!settingsError && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="gw-control rounded-full border-2 border-white/40 px-5 py-2.5 font-semibold"
+            >
+              {copy.ui.retry}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -102,7 +131,15 @@ function DemoBanner() {
  * Percorso dell'utente del token: calendario (facoltativo) → storia → fine.
  * Chiudere la storia riporta al calendario; arrivare in fondo mostra la fine con «ricomincia».
  */
-function MyWrapped({ health, stats }: { health: HealthResponse; stats: WrappedStats }) {
+function MyWrapped({
+  health,
+  stats,
+  onChangeSettings,
+}: {
+  health: HealthResponse;
+  stats: WrappedStats;
+  onChangeSettings: () => void;
+}) {
   const [calendar, setCalendar] = useState<CalendarStats | null | undefined>(undefined);
   const [step, setStep] = useState<'story' | 'end'>('story');
   // Cambia a ogni ripartenza: rimonta il player dalla prima card.
@@ -112,11 +149,20 @@ function MyWrapped({ health, stats }: { health: HealthResponse; stats: WrappedSt
     return (
       <div className="h-full overflow-y-auto">
         {health.demoMode ? <DemoBanner /> : null}
-        <header className="mx-auto max-w-xl px-6 pt-6">
-          <h1 className="font-display text-4xl font-black">
-            {copy.ui.app_title} {stats.year}
-          </h1>
-          <p className="opacity-80">{copy.ui.app_tagline}</p>
+        <header className="mx-auto flex max-w-xl flex-wrap items-start justify-between gap-3 px-6 pt-6">
+          <div>
+            <h1 className="font-display text-4xl font-black">
+              {copy.ui.app_title} {stats.year}
+            </h1>
+            <p className="opacity-80">{copy.ui.app_tagline}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onChangeSettings}
+            className="gw-control rounded-full border-2 border-white/30 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+          >
+            {copy.ui.change_settings}
+          </button>
         </header>
         <CalendarUpload
           year={stats.year}
@@ -179,16 +225,57 @@ export function App() {
   return <MainApp />;
 }
 
+/**
+ * Impostazioni → wrapped. Senza impostazioni (né `.env` né schermata) si apre la schermata
+ * iniziale; con un token ricordato nel browser la schermata lo prova da sola.
+ */
 function MainApp() {
-  // Salute e wrapped in parallelo: l'anno è quello di default del server (`WRAPPED_YEAR`).
-  const data = useLoad((s) => Promise.all([api.health(s), api.me(undefined, s)]), []);
+  // Cambia a ogni nuova impostazione: ricarica salute e wrapped da capo.
+  const [generation, setGeneration] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const health = useLoad((s) => api.health(s), [generation]);
+
+  if (health.error) return <ErrorView error={health.error} onRetry={health.retry} />;
+  if (!health.data) return null;
+
+  if (!health.data.configured || editing) {
+    const saved = loadSettings();
+    return (
+      <SetupScreen
+        key={generation}
+        saved={saved}
+        autoSubmit={!editing}
+        onConfigured={() => {
+          setEditing(false);
+          setGeneration((n) => n + 1);
+        }}
+        onCancel={health.data.configured ? () => setEditing(false) : undefined}
+      />
+    );
+  }
+  return (
+    <Wrapped key={generation} health={health.data} onChangeSettings={() => setEditing(true)} />
+  );
+}
+
+/** Wrapped dell'utente: schermata di attesa con percentuale, poi calendario e storia. */
+function Wrapped({
+  health,
+  onChangeSettings,
+}: {
+  health: HealthResponse;
+  onChangeSettings: () => void;
+}) {
+  // L'anno è quello di default del server (`WRAPPED_YEAR`).
+  const me = useLoad((s) => api.me(undefined, s), []);
   // La schermata di attesa mostra il 100% prima di lasciare il posto al wrapped.
   const [revealed, setRevealed] = useState(false);
 
-  if (data.error) return <ErrorView error={data.error} onRetry={data.retry} />;
-  if (!data.data || !revealed) {
-    return <LoadingScreen done={data.data !== undefined} onFinished={() => setRevealed(true)} />;
+  if (me.error) {
+    return <ErrorView error={me.error} onRetry={me.retry} onChangeSettings={onChangeSettings} />;
   }
-  const [health, stats] = data.data;
-  return <MyWrapped health={health} stats={stats} />;
+  if (!me.data || !revealed) {
+    return <LoadingScreen done={me.data !== undefined} onFinished={() => setRevealed(true)} />;
+  }
+  return <MyWrapped health={health} stats={me.data} onChangeSettings={onChangeSettings} />;
 }

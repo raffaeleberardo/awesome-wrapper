@@ -1,5 +1,6 @@
 # Git Wrapped: due container, nessun volume, nessun database.
-# Funziona anche senza .env (default sicuri: DEMO_MODE=true). Vedi .env.example.
+# Funziona anche senza .env: URL di GitLab, gruppo e token si inseriscono dalla schermata
+# iniziale dell'app. Il .env serve solo per saltarla o per opzioni avanzate (.env.example).
 name: git-wrapped
 
 x-logging: &logging
@@ -18,7 +19,7 @@ services:
         required: false
     environment:
       # I default valgono se la variabile non e' in .env ne' nella shell.
-      DEMO_MODE: ${DEMO_MODE:-true}
+      DEMO_MODE: ${DEMO_MODE:-false}
       GITLAB_URL: ${GITLAB_URL:-https://gitlab.com}
       GITLAB_TOKEN: ${GITLAB_TOKEN:-}
       GITLAB_GROUP: ${GITLAB_GROUP:-}

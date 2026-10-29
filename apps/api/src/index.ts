@@ -1,7 +1,7 @@
 import { loadConfig, type AppConfig } from './config';
 import { createDemoSource, createGitLabSource } from './gitlab';
 import { createLogger } from './logger';
-import { buildServer } from './server';
+import { buildServer, type SourceSettings } from './server';
 
 const HOST = '0.0.0.0';
 const PORT = 3000;
@@ -17,21 +17,35 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const source = config.demoMode
-    ? createDemoSource(undefined, config.timezone)
-    : createGitLabSource(
-        {
-          url: config.gitlabUrl,
-          token: config.gitlabToken,
-          group: config.gitlabGroup,
-          ...(config.gitlabCaCert ? { caCert: config.gitlabCaCert } : {}),
-        },
-        // Le cache interne del collettore scadono come quella delle statistiche: un solo
-        // parametro (CACHE_TTL_MINUTES) decide quanto restano in RAM i dati di GitLab.
-        { cacheTtlMs: config.cacheTtlMinutes * 60_000, timeZone: config.timezone },
-      );
+  // Le cache interne del collettore scadono come quella delle statistiche: un solo parametro
+  // (CACHE_TTL_MINUTES) decide quanto restano in RAM i dati di GitLab.
+  const createSource = (settings: SourceSettings) =>
+    settings.mode === 'demo'
+      ? createDemoSource(undefined, config.timezone)
+      : createGitLabSource(
+          {
+            url: settings.url,
+            token: settings.token,
+            group: settings.group,
+            ...(config.gitlabCaCert ? { caCert: config.gitlabCaCert } : {}),
+          },
+          { cacheTtlMs: config.cacheTtlMinutes * 60_000, timeZone: config.timezone },
+        );
 
-  const app = buildServer({ source, config, logger });
+  // Sorgente iniziale dal .env: demo, oppure GitLab se c'è il token. Altrimenti nessuna:
+  // URL, gruppo e token si inseriscono dalla schermata iniziale dell'app.
+  const source = config.demoMode
+    ? createSource({ mode: 'demo' })
+    : config.gitlabToken
+      ? createSource({
+          mode: 'gitlab',
+          url: config.gitlabUrl,
+          group: config.gitlabGroup,
+          token: config.gitlabToken,
+        })
+      : null;
+
+  const app = buildServer({ source, createSource, config, logger });
 
   const shutdown = (signal: string): void => {
     logger.info({ signal }, 'arresto in corso');
@@ -44,7 +58,10 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => shutdown('SIGINT'));
 
   await app.listen({ host: HOST, port: PORT });
-  logger.info({ demoMode: config.demoMode, year: config.year }, 'api in ascolto');
+  logger.info(
+    { demoMode: config.demoMode, configured: source !== null, year: config.year },
+    'api in ascolto',
+  );
 }
 
 main().catch((err: unknown) => {

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** Versione dei contratti. Cambia solo con un nuovo tag `contracts-vN`. */
-export const CONTRACTS_VERSION = 3 as const;
+export const CONTRACTS_VERSION = 4 as const;
 
 /** Data e ora ISO 8601 con offset, es. `2026-03-14T23:41:07+01:00` o `...Z`. */
 export const isoDateTime = z.iso.datetime({ offset: true });

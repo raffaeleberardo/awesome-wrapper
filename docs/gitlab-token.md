@@ -17,7 +17,11 @@ Ognuno clona il repository, mette il proprio token nel proprio `.env` e avvia l'
 
 ## Dove metterlo
 
-Nel file `.env`, alla radice del repository:
+Nella **schermata iniziale** dell'app (http://localhost:8080): indirizzo di GitLab, gruppo (facoltativo) e token. L'app li verifica subito con GitLab e segnala un token non valido, un token di bot o un gruppo inesistente. Il link «Crea il token su GitLab» apre la pagina dei token della tua istanza con nome e scope già compilati.
+
+Il token resta nella memoria del server locale dell'app, non su disco: al riavvio va reinserito, a meno di attivare «Ricorda su questo browser» (non farlo su un computer condiviso).
+
+In alternativa, per saltare la schermata, nel file `.env` alla radice del repository:
 
 ```bash
 GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx

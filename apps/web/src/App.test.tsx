@@ -11,7 +11,8 @@ const health = {
   status: 'ok',
   demoMode: true,
   year: exampleWrappedStats.year,
-  contractsVersion: 3,
+  contractsVersion: 4,
+  configured: true,
 };
 
 function mockApi(me: Response) {
@@ -46,6 +47,7 @@ describe('App', () => {
       expect(await screen.findByText('Token KO')).toBeTruthy();
       expect(screen.getByText(copy.ui.error_token_hint)).toBeTruthy();
       expect(screen.queryByRole('button', { name: copy.ui.retry })).toBeNull();
+      expect(screen.getByRole('button', { name: copy.ui.change_settings })).toBeTruthy();
     },
   );
 

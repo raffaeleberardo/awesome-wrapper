@@ -7,7 +7,8 @@ import { ConfigError, loadConfig } from '../src/config';
 describe('loadConfig', () => {
   it('applica i default', () => {
     expect(loadConfig({})).toMatchObject({
-      demoMode: true,
+      demoMode: false,
+      gitlabToken: '',
       gitlabUrl: 'https://gitlab.com',
       year: 2026,
       timezone: 'Europe/Rome',
@@ -16,9 +17,8 @@ describe('loadConfig', () => {
     });
   });
 
-  it('con DEMO_MODE=false richiede il token', () => {
-    expect(() => loadConfig({ DEMO_MODE: 'false' })).toThrow(ConfigError);
-    expect(() => loadConfig({ DEMO_MODE: 'false' })).toThrow(/GITLAB_TOKEN/);
+  it('senza token parte lo stesso: URL, gruppo e token arrivano dalla schermata iniziale', () => {
+    expect(loadConfig({ DEMO_MODE: 'false' })).toMatchObject({ demoMode: false, gitlabToken: '' });
   });
 
   it('con DEMO_MODE=false il gruppo è facoltativo', () => {

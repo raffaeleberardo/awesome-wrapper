@@ -294,7 +294,8 @@ export const exampleHealthResponse: HealthResponse = {
   status: 'ok',
   demoMode: true,
   year: 2026,
-  contractsVersion: 3,
+  contractsVersion: 4,
+  configured: true,
 };
 
 export const exampleApiError: ApiError = {

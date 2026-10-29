@@ -2,7 +2,7 @@
 
 Il tuo anno su GitLab, in stile Spotify Wrapped: storie a schermo intero con le tue statistiche, badge curiosi, una personalità tutta tua e un oroscopo. Funziona subito, anche senza GitLab, grazie ai dati finti della modalità demo.
 
-L'app mostra solo il wrapped di chi la avvia: riconosce la persona dal token GitLab, non c'è una lista di colleghi da sfogliare. È pensata per girare in locale: ognuno clona il repository, mette il proprio token nel proprio `.env` e la avvia sul proprio computer.
+L'app mostra solo il wrapped di chi la avvia: riconosce la persona dal token GitLab, non c'è una lista di colleghi da sfogliare. È pensata per girare in locale: ognuno la avvia sul proprio computer e inserisce URL di GitLab, gruppo e il proprio token nella schermata iniziale.
 
 ## Avvio in 3 comandi
 
@@ -18,18 +18,20 @@ La modalità demo mostra il wrapped di una persona inventata (Giulia Ferri, da u
 
 ## Passare ai dati reali
 
-1. Crea il file di configurazione: `cp .env.example .env`
-2. Apri `.env` e compila `GITLAB_TOKEN` con il **tuo Personal Access Token** (scope `read_api`) e, se vuoi limitarti a un gruppo, `GITLAB_GROUP` (il percorso, per esempio `azienda/team`; se resta vuoto si leggono tutti i gruppi di cui fai parte). I Group e Project Access Token non vanno bene: appartengono a un bot, e il wrapped è di una persona. Non serve toccare `DEMO_MODE`: `make up` usa sempre i dati reali, `make demo` sempre quelli finti.
-3. Avvia con `make up` e apri http://localhost:8080: vedrai il wrapped della persona a cui appartiene il token.
+1. Avvia con `make up` e apri http://localhost:8080.
+2. Nella schermata iniziale inserisci l'indirizzo di GitLab, il gruppo (facoltativo, per esempio `azienda/team`; vuoto = tutti i gruppi di cui fai parte) e il **tuo Personal Access Token** (scope `read_api`). La pagina ha un link che apre GitLab con il token già compilato.
+3. L'app verifica subito token e gruppo con GitLab e apre il wrapped della persona a cui appartiene il token. I Group e Project Access Token vengono rifiutati: appartengono a un bot, e il wrapped è di una persona.
 
-Come creare il token: [docs/gitlab-token.md](docs/gitlab-token.md). Il file `.env` è escluso da Git: non committarlo.
+Il token resta nella memoria del server locale, non su disco. Con «Ricorda su questo browser» resta anche nel browser, così non lo reinserisci al prossimo avvio. Per saltare la schermata si può ancora usare il `.env` (`cp .env.example .env`, poi `GITLAB_TOKEN`, `GITLAB_URL`, `GITLAB_GROUP`): è escluso da Git, non committarlo.
+
+Come creare il token: [docs/gitlab-token.md](docs/gitlab-token.md).
 
 Il calendario Outlook è facoltativo: si carica dalla pagina del calendario, vedi [docs/calendario-outlook.md](docs/calendario-outlook.md).
 
 ## Requisiti
 
 - **Docker** con **Docker Compose v2**. Verifica con `docker compose version`.
-- **make**. Su Windows non è incluso di default: usa WSL2, installalo a parte, oppure lancia direttamente `docker compose up -d --build --wait` (demo) e `docker compose down` per fermare. Per i dati reali senza make metti `DEMO_MODE=false` in `.env`.
+- **make**. Su Windows non è incluso di default: usa WSL2, installalo a parte, oppure lancia direttamente `docker compose up -d --build --wait` e `docker compose down` per fermare. Senza make si apre la schermata iniziale; per la demo diretta metti `DEMO_MODE=true` in `.env`.
 - Solo per lo sviluppo locale senza Docker: **Node.js 22** o successivo e **pnpm 10** (la versione è fissata in `package.json`).
 
 ## Comandi del Makefile
@@ -47,7 +49,7 @@ Le variabili d'ambiente sono documentate in `.env.example`: le principali sono `
 
 ## Condividere l'app senza Git
 
-Chi vuole solo usare l'app non ha bisogno del codice: basta il **kit** in `kit/` (un `compose.yaml` che scarica le immagini già pronte da `ghcr.io/raffaeleberardo`, `env.example` e `LEGGIMI.txt`). Si manda lo zip in chat e ognuno, con solo Docker, mette il proprio token nel suo `.env` e lancia `docker compose up -d`.
+Chi vuole solo usare l'app non ha bisogno del codice: basta il **kit** in `kit/` (un `compose.yaml` che scarica le immagini già pronte da `ghcr.io/raffaeleberardo`, `env.example` e `LEGGIMI.txt`). Si manda lo zip in chat e ognuno, con solo Docker, lancia `docker compose up -d` e inserisce URL, gruppo e token nella pagina.
 
 Per pubblicare una nuova versione: fai il commit, poi `make kit`. Lo script `scripts/publish-kit.sh` costruisce le immagini per `amd64` e `arm64`, le carica con il tag del commit e `latest`, e crea `dist/git-wrapped-kit.zip`. La prima volta serve `docker login ghcr.io` con un token GitHub con scope `write:packages`, e dopo il primo caricamento i due pacchetti vanno resi pubblici dalle impostazioni del pacchetto su GitHub. Chi ha già il kit aggiorna con `docker compose pull && docker compose up -d`.
 

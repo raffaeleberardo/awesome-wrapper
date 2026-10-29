@@ -49,6 +49,10 @@ Caddy serve anche la SPA, con header di sicurezza e CSP `connect-src 'self'`. La
 
 Lo stesso motore `packages/stats` è importato sia dal server sia dal browser. Il server non usa il calendario e il browser non chiama GitLab.
 
+## Impostazioni dalla schermata iniziale
+
+Senza `GITLAB_TOKEN` nel `.env` (e senza `DEMO_MODE=true`) l'app si apre sulla schermata iniziale: indirizzo di GitLab, gruppo e token. Il browser li manda una volta con `POST /api/settings` (intestazione anti-CSRF `x-git-wrapped: 1`); l'API crea una sorgente GitLab nuova, verifica subito utente (`GET /user`) e, se indicato, il gruppo, e solo allora la rende attiva con cache nuove, così nulla di quanto letto con il token precedente sopravvive. Il token resta nella RAM del container `api`: al riavvio va reinserito, oppure il browser lo ripropone se l'utente ha scelto «Ricorda su questo browser». `DELETE /api/settings` dimentica tutto.
+
 ## Flusso di una richiesta `GET /api/me`
 
 1. Il browser chiede `/api/me?year=...`. La richiesta arriva a Caddy (`web`), che la inoltra ad `api`.

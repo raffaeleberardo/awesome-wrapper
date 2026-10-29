@@ -20,7 +20,12 @@ describe('rotte', () => {
     const res = await app.inject('/api/health');
     expect(res.statusCode).toBe(200);
     const body = healthResponseSchema.parse(res.json());
-    expect(body).toMatchObject({ demoMode: true, year: 2026, contractsVersion: 3 });
+    expect(body).toMatchObject({
+      demoMode: true,
+      year: 2026,
+      contractsVersion: 4,
+      configured: true,
+    });
   });
 
   it('imposta gli header di sicurezza', async () => {
@@ -56,6 +61,7 @@ describe('rotte', () => {
     const sink = makeLogSink();
     const app = buildServer({
       source: createDemoSource(undefined, 'Europe/Rome'),
+      createSource: () => createDemoSource(undefined, 'Europe/Rome'),
       config: testConfig,
       logger: createLogger('info', sink.stream),
     });
@@ -109,7 +115,7 @@ describe('errori', () => {
     expect(source.currentUser).not.toHaveBeenCalled();
   });
 
-  it('401 unauthorized con un messaggio che rimanda a GITLAB_TOKEN', async () => {
+  it('401 unauthorized con un messaggio sul token', async () => {
     const source = makeSource({
       currentUser: async () => {
         throw new SourceError('unauthorized', 'dettaglio-segreto-xyz');
@@ -120,7 +126,7 @@ describe('errori', () => {
     expect(res.statusCode).toBe(401);
     const body = apiErrorSchema.parse(res.json());
     expect(body.error.code).toBe('unauthorized');
-    expect(body.error.message).toContain('GITLAB_TOKEN');
+    expect(body.error.message).toContain('token');
     expect(res.body).not.toContain('dettaglio-segreto-xyz');
     expect(source.getActivity).not.toHaveBeenCalled();
   });
@@ -137,7 +143,6 @@ describe('errori', () => {
     const body = apiErrorSchema.parse(res.json());
     expect(body.error.code).toBe('bot_token');
     expect(body.error.message).toContain('Personal Access Token');
-    expect(body.error.message).toContain('docs/gitlab-token.md');
     expect(res.body).not.toContain('group_7_bot_abc');
     expect(source.getActivity).not.toHaveBeenCalled();
   });

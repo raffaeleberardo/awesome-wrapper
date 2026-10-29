@@ -11,7 +11,7 @@ Git Wrapped è pensato per chi vuole rivedere il proprio anno su GitLab. Ognuno 
 
 ## Cosa entra
 
-- **GitLab, via API**, con il tuo Personal Access Token di sola lettura (`read_api`). Il token sta solo nel file `.env` sul tuo computer. Dettagli in [docs/gitlab-token.md](gitlab-token.md).
+- **GitLab, via API**, con il tuo Personal Access Token di sola lettura (`read_api`). Il token si inserisce nella schermata iniziale e resta nella memoria del server locale (oppure nel `.env`, se lo usi); con «Ricorda su questo browser» resta anche nel `localStorage` del browser, sullo stesso computer. Non viene mai scritto su disco dall'app né registrato nei log. Dettagli in [docs/gitlab-token.md](gitlab-token.md).
 - **Il file `.ics` del calendario**, facoltativo, caricato dall'utente. Viene letto solo nel browser (vedi sotto).
 
 ## Cosa resta in memoria, e per quanto
