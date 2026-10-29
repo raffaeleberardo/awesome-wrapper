@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { z } from 'zod';
 
 /** Configurazione letta dalle variabili d'ambiente (vedi tabella in `docs/piano.md`). */
 export interface AppConfig {
@@ -22,36 +23,89 @@ export class ConfigError extends Error {
 
 type Env = Record<string, string | undefined>;
 
-/** Stringa vuota o assente = non impostata. */
-function read(env: Env, key: string): string | undefined {
-  const value = env[key]?.trim();
-  return value ? value : undefined;
-}
+/** Stringa vuota o di soli spazi = non impostata. */
+const optional = z
+  .string()
+  .optional()
+  .transform((v) => (v?.trim() ? v.trim() : undefined));
 
-function readBool(env: Env, key: string, fallback: boolean): boolean {
-  const value = read(env, key)?.toLowerCase();
-  if (value === undefined) return fallback;
-  if (['true', '1', 'yes', 'si'].includes(value)) return true;
-  if (['false', '0', 'no'].includes(value)) return false;
-  throw new ConfigError(`${key} deve essere true o false.`);
-}
+const bool = (key: string, fallback: boolean) =>
+  optional.transform((v, ctx) => {
+    if (v === undefined) return fallback;
+    const value = v.toLowerCase();
+    if (['true', '1', 'yes', 'si'].includes(value)) return true;
+    if (['false', '0', 'no'].includes(value)) return false;
+    ctx.addIssue({ code: 'custom', message: `${key} deve essere true o false.` });
+    return z.NEVER;
+  });
 
-function readInt(env: Env, key: string, fallback: number, min: number, max: number): number {
-  const raw = read(env, key);
-  if (raw === undefined) return fallback;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value < min || value > max) {
-    throw new ConfigError(`${key} deve essere un intero tra ${min} e ${max}.`);
+const int = (key: string, fallback: number, min: number, max: number) =>
+  optional.transform((v, ctx) => {
+    if (v === undefined) return fallback;
+    const value = Number(v);
+    if (!Number.isInteger(value) || value < min || value > max) {
+      ctx.addIssue({ code: 'custom', message: `${key} deve essere un intero tra ${min} e ${max}.` });
+      return z.NEVER;
+    }
+    return value;
+  });
+
+const url = optional.transform((v, ctx) => {
+  const value = v ?? 'https://gitlab.com';
+  if (!URL.canParse(value)) {
+    ctx.addIssue({ code: 'custom', message: 'GITLAB_URL non è un URL valido.' });
+    return z.NEVER;
   }
   return value;
-}
+});
+
+const timezone = optional.transform((v, ctx) => {
+  const tz = v ?? 'Europe/Rome';
+  try {
+    new Intl.DateTimeFormat('it-IT', { timeZone: tz });
+    return tz;
+  } catch {
+    ctx.addIssue({ code: 'custom', message: 'TZ non è un fuso orario IANA valido.' });
+    return z.NEVER;
+  }
+});
+
+/**
+ * Schema dell'ambiente. I messaggi d'errore non contengono mai i valori (token compreso).
+ * Con `DEMO_MODE=false` token e gruppo sono obbligatori.
+ */
+const envSchema = z
+  .object({
+    DEMO_MODE: bool('DEMO_MODE', true),
+    GITLAB_URL: url,
+    GITLAB_TOKEN: optional,
+    GITLAB_GROUP: optional,
+    WRAPPED_YEAR: int('WRAPPED_YEAR', 2026, 2000, 2100),
+    TZ: timezone,
+    CACHE_TTL_MINUTES: int('CACHE_TTL_MINUTES', 15, 1, 1440),
+    GITLAB_CA_CERT: optional,
+  })
+  .superRefine((env, ctx) => {
+    if (env.DEMO_MODE) return;
+    const missing = [
+      env.GITLAB_TOKEN ? null : 'GITLAB_TOKEN',
+      env.GITLAB_GROUP ? null : 'GITLAB_GROUP',
+    ].filter((k): k is string => k !== null);
+    if (missing.length > 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `Con DEMO_MODE=false servono anche: ${missing.join(', ')}. ` +
+          'Impostali nel file .env oppure usa DEMO_MODE=true.',
+      });
+    }
+  });
 
 /**
  * `GITLAB_CA_CERT`: contenuto PEM inline (contiene `-----BEGIN`) oppure percorso di un
  * file leggibile, da montare in sola lettura. Il file viene solo letto, mai scritto.
  */
-function readCaCert(env: Env): string | undefined {
-  const raw = read(env, 'GITLAB_CA_CERT');
+function readCaCert(raw: string | undefined): string | undefined {
   if (raw === undefined) return undefined;
   if (raw.includes('-----BEGIN')) return raw;
   try {
@@ -62,51 +116,21 @@ function readCaCert(env: Env): string | undefined {
   }
 }
 
-function checkTimezone(tz: string): string {
-  try {
-    new Intl.DateTimeFormat('it-IT', { timeZone: tz });
-    return tz;
-  } catch {
-    throw new ConfigError('TZ non è un fuso orario IANA valido.');
-  }
-}
-
-/**
- * Valida l'ambiente. Con `DEMO_MODE=false` token e gruppo sono obbligatori.
- * Gli errori non contengono mai il valore del token.
- * (Validazione scritta a mano: `zod` non è tra le dipendenze di `apps/api`,
- * vedi `docs/contract-requests.md`.)
- */
+/** Valida l'ambiente con zod e restituisce la configurazione, o lancia `ConfigError`. */
 export function loadConfig(env: Env = process.env): AppConfig {
-  const demoMode = readBool(env, 'DEMO_MODE', true);
-  const gitlabToken = read(env, 'GITLAB_TOKEN') ?? '';
-  const gitlabGroup = read(env, 'GITLAB_GROUP') ?? '';
-  if (!demoMode) {
-    const missing = [
-      gitlabToken ? null : 'GITLAB_TOKEN',
-      gitlabGroup ? null : 'GITLAB_GROUP',
-    ].filter((k): k is string => k !== null);
-    if (missing.length > 0) {
-      throw new ConfigError(
-        `Con DEMO_MODE=false servono anche: ${missing.join(', ')}. ` +
-          'Impostali nel file .env oppure usa DEMO_MODE=true.',
-      );
-    }
+  const parsed = envSchema.safeParse(env);
+  if (!parsed.success) {
+    throw new ConfigError(parsed.error.issues[0]?.message ?? 'Configurazione non valida.');
   }
-  const gitlabUrl = read(env, 'GITLAB_URL') ?? 'https://gitlab.com';
-  try {
-    new URL(gitlabUrl);
-  } catch {
-    throw new ConfigError('GITLAB_URL non è un URL valido.');
-  }
+  const e = parsed.data;
   return {
-    demoMode,
-    gitlabUrl,
-    gitlabToken,
-    gitlabGroup,
-    year: readInt(env, 'WRAPPED_YEAR', 2026, 2000, 2100),
-    timezone: checkTimezone(read(env, 'TZ') ?? 'Europe/Rome'),
-    cacheTtlMinutes: readInt(env, 'CACHE_TTL_MINUTES', 15, 1, 1440),
-    gitlabCaCert: demoMode ? undefined : readCaCert(env),
+    demoMode: e.DEMO_MODE,
+    gitlabUrl: e.GITLAB_URL,
+    gitlabToken: e.GITLAB_TOKEN ?? '',
+    gitlabGroup: e.GITLAB_GROUP ?? '',
+    year: e.WRAPPED_YEAR,
+    timezone: e.TZ,
+    cacheTtlMinutes: e.CACHE_TTL_MINUTES,
+    gitlabCaCert: e.DEMO_MODE ? undefined : readCaCert(e.GITLAB_CA_CERT),
   };
 }
