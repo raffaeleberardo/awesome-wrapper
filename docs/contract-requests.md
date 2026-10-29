@@ -1,8 +1,15 @@
 # Richieste di modifica ai contratti
 
-I contratti sono congelati a `contracts-v2`. Se ti serve un cambiamento (contratti, interfacce
+I contratti sono congelati a `contracts-v3`. Se ti serve un cambiamento (contratti, interfacce
 congelate, nuove dipendenze npm), aggiungi una voce qui sotto e continua con uno stub.
 Decide A11 in Fase 2.
+
+> **Nota (`contracts-v3`).** Le voci qui sotto sono storiche. In `contracts-v3` l'app mostra solo il
+> wrapped del proprietario del token (`GET /api/me`, Personal Access Token): la lista dei membri
+> (`GET /api/members`, `search_members`), il wrapped per username e i premi di team della notte
+> degli Oscar (`GET /api/team`, compresi `pipeline_phoenix` e `first_light`) sono stati rimossi.
+> I campi `pipelines.recoveries` ed `earliest_morning_commit` restano in `WrappedStats`. Dettagli in
+> [`contracts.md`](./contracts.md).
 
 Formato:
 

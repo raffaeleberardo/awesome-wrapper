@@ -75,7 +75,9 @@ const timezone = optional.transform((v, ctx) => {
 
 /**
  * Schema dell'ambiente. I messaggi d'errore non contengono mai i valori (token compreso).
- * Con `DEMO_MODE=false` il token è obbligatorio; senza gruppo si leggono tutti i gruppi del token.
+ * Con `DEMO_MODE=false` il token è obbligatorio: un Personal Access Token (scope `read_api`)
+ * della persona di cui si mostra il wrapped. `GITLAB_GROUP` limita i gruppi letti; senza gruppo
+ * si leggono tutti i gruppi del token.
  */
 const envSchema = z
   .object({
@@ -93,7 +95,8 @@ const envSchema = z
     ctx.addIssue({
       code: 'custom',
       message:
-        'Con DEMO_MODE=false serve anche: GITLAB_TOKEN. ' +
+        'Con DEMO_MODE=false serve anche: GITLAB_TOKEN ' +
+        '(un Personal Access Token con scope read_api). ' +
         'Impostalo nel file .env oppure usa DEMO_MODE=true.',
     });
   });

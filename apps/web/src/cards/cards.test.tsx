@@ -92,9 +92,8 @@ describe('CardExportButton', () => {
 });
 
 describe('CardsDemo', () => {
-  it('mostra tutte le card e l’anteprima Oscar senza API', () => {
+  it('mostra tutte le card senza API', () => {
     render(<CardsDemo />);
     for (const id of CARD_IDS) expect(screen.getByTestId(`card-${id}`)).toBeTruthy();
-    expect(screen.getByLabelText('oscar')).toBeTruthy();
   });
 });

@@ -1,10 +1,6 @@
 import { BADGE_IDS, PERSONALITY_DIMENSIONS } from '@git-wrapped/contracts';
-import type { CalendarStats, TeamAwards, WrappedStats } from '@git-wrapped/contracts';
-import {
-  exampleCalendarStats,
-  exampleTeamAwards,
-  exampleWrappedStats,
-} from '@git-wrapped/contracts/examples';
+import type { CalendarStats, WrappedStats } from '@git-wrapped/contracts';
+import { exampleCalendarStats, exampleWrappedStats } from '@git-wrapped/contracts/examples';
 
 /**
  * Varianti di dati per sviluppo e test: esempio, zero attività, valori estremi.
@@ -200,34 +196,8 @@ export const extremeCalendar: CalendarStats = {
   meetingsPerCommit: 12345.67,
 };
 
-export const extremeAwards: TeamAwards = {
-  ...exampleTeamAwards,
-  teamSize: 9999,
-  awards: exampleTeamAwards.awards.map((a) => ({
-    ...a,
-    value: BIG,
-    detail: a.detail === null ? null : LONG_WORD,
-    winners: a.winners.map((w) => ({ ...w, displayName: `${w.displayName} ${LONG_WORD}` })),
-  })),
-  teamTotals: { commits: BIG, mergeRequestsMerged: BIG, pipelines: BIG, emojiGiven: BIG },
-};
-
-export const zeroAwards: TeamAwards = {
-  ...exampleTeamAwards,
-  teamSize: 0,
-  awards: [],
-  teamTotals: { commits: 0, mergeRequestsMerged: 0, pipelines: 0, emojiGiven: 0 },
-};
-
-export const VARIANTS: Record<
-  VariantName,
-  { stats: WrappedStats; calendar: CalendarStats; awards: TeamAwards }
-> = {
-  example: {
-    stats: exampleWrappedStats,
-    calendar: exampleCalendarStats,
-    awards: exampleTeamAwards,
-  },
-  zero: { stats: zeroStats, calendar: zeroCalendar, awards: zeroAwards },
-  extreme: { stats: extremeStats, calendar: extremeCalendar, awards: extremeAwards },
+export const VARIANTS: Record<VariantName, { stats: WrappedStats; calendar: CalendarStats }> = {
+  example: { stats: exampleWrappedStats, calendar: exampleCalendarStats },
+  zero: { stats: zeroStats, calendar: zeroCalendar },
+  extreme: { stats: extremeStats, calendar: extremeCalendar },
 };

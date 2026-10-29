@@ -1,5 +1,4 @@
-import type { RawActivity, TeamAwards, WrappedStats } from '@git-wrapped/contracts';
-import { computeAwards } from './awards';
+import type { RawActivity, WrappedStats } from '@git-wrapped/contracts';
 import { computeBadges } from './badges';
 import { computeEpicMoments } from './epic';
 import { buildContext } from './internal/context';
@@ -69,11 +68,6 @@ export function computeWrappedStats(
     personality: computePersonality(ctx),
     horoscopeSeed: horoscopeSeed(raw.member.username, raw.year),
   };
-}
-
-/** `WrappedStats[]` dell'intero team → premi della notte degli Oscar. */
-export function computeTeamAwards(stats: WrappedStats[], year: number): TeamAwards {
-  return computeAwards(stats, year);
 }
 
 const FNV_OFFSET_BASIS = 0x811c9dc5;

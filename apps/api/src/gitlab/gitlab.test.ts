@@ -320,6 +320,66 @@ describe('GitLab source', () => {
     expect((await src.listMembers()).map((m) => m.username)).toEqual(['ada', 'io']);
   });
 
+  it('currentUser legge GET /user e lo riusa per i membri', async () => {
+    route = (url) => {
+      const p = decodeURIComponent(url.pathname.replace('/api/v4', ''));
+      if (p === '/user') return { id: 1, username: 'ada', name: 'Ada Finta', state: 'active' };
+      if (p === '/groups/acme/team/members/all') return members;
+      return null;
+    };
+    const src = createGitLabSource(config, fast);
+    expect(await src.currentUser()).toEqual({ username: 'ada', displayName: 'Ada Finta' });
+    await src.listMembers();
+    expect(await src.currentUser()).toEqual({ username: 'ada', displayName: 'Ada Finta' });
+    expect(requests.filter((r) => r.startsWith('/api/v4/user'))).toHaveLength(1);
+  });
+
+  it('currentUser senza nome usa lo username', async () => {
+    route = (url) => (url.pathname.endsWith('/user') ? { id: 1, username: 'ada' } : null);
+    expect(await createGitLabSource(config, fast).currentUser()).toEqual({
+      username: 'ada',
+      displayName: 'ada',
+    });
+  });
+
+  it.each([
+    ['flag bot', { id: 9, username: 'servizio', name: 'Servizio', bot: true }],
+    ['token di gruppo', { id: 9, username: 'group_123_bot_4f2a', name: 'Token gruppo' }],
+    ['token di progetto', { id: 9, username: 'project_55_bot', name: 'Token progetto' }],
+  ])('currentUser rifiuta un bot (%s) con bot_token', async (_label, user) => {
+    route = (url) => (url.pathname.endsWith('/user') ? user : null);
+    const err = await createGitLabSource(config, fast)
+      .currentUser()
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SourceError);
+    expect((err as SourceError).code).toBe('bot_token');
+    expect((err as SourceError).message).not.toContain(user.username);
+    expect((err as SourceError).message).not.toContain(TOKEN);
+  });
+
+  it('currentUser: 401 -> unauthorized, 403 su /user -> unauthorized', async () => {
+    route = () => new Response('{}', { status: 401 });
+    const e1 = await createGitLabSource(config, fast)
+      .currentUser()
+      .catch((e: unknown) => e);
+    expect(e1).toBeInstanceOf(SourceError);
+    expect((e1 as SourceError).code).toBe('unauthorized');
+    expect((e1 as SourceError).message).not.toContain(TOKEN);
+    route = () => new Response('{}', { status: 403 });
+    const e2 = await createGitLabSource(config, fast)
+      .currentUser()
+      .catch((e: unknown) => e);
+    expect((e2 as SourceError).code).toBe('unauthorized');
+  });
+
+  it('currentUser: 429 persistente -> rate_limited', async () => {
+    route = () => new Response('{}', { status: 429 });
+    const err = await createGitLabSource(config, fast)
+      .currentUser()
+      .catch((e: unknown) => e);
+    expect((err as SourceError).code).toBe('rate_limited');
+  });
+
   it('con un gruppo impostato un 403 resta un errore', async () => {
     route = (url) =>
       url.pathname.endsWith('/members/all') ? new Response(null, { status: 403 }) : null;
@@ -631,5 +691,21 @@ describe('Demo source', () => {
   it('senza dati iniettati usa le fixture (anche vuote)', async () => {
     const src = createDemoSource();
     expect(Array.isArray(await src.listMembers())).toBe(true);
+  });
+
+  it('currentUser restituisce il primo membro e non usa la rete', async () => {
+    expect(await createDemoSource(data).currentUser()).toEqual(data.members[0]);
+    const src = createDemoSource();
+    const members = await src.listMembers();
+    expect(await src.currentUser()).toEqual(members[0]);
+    expect(await src.getActivity((await src.currentUser()).username, 2026)).not.toBeNull();
+    expect(requests).toHaveLength(0);
+  });
+
+  it('currentUser senza membri demo -> SourceError', async () => {
+    const err = await createDemoSource({ members: [], activities: {} })
+      .currentUser()
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SourceError);
   });
 });

@@ -1,5 +1,6 @@
 import { demoActivities, demoMembers } from '@git-wrapped/fixtures';
 import type { Member, RawActivity } from '@git-wrapped/contracts';
+import { SourceError } from '../source';
 import type { ActivitySource, GitLabSourceConfig } from '../source';
 import { createCollector } from './collector';
 import type { GitLabSourceOptions } from './collector';
@@ -23,6 +24,7 @@ export interface DemoData {
 /**
  * Sorgente demo: legge da `@git-wrapped/fixtures`, nessuna chiamata di rete.
  * Le attività sono filtrate per anno; `data` permette di iniettare dati nei test.
+ * Il "proprietario del token" è il primo membro del team demo.
  */
 export function createDemoSource(data?: DemoData, timeZone?: string): ActivitySource {
   const members = data?.members ?? demoMembers;
@@ -35,6 +37,11 @@ export function createDemoSource(data?: DemoData, timeZone?: string): ActivitySo
   };
 
   return {
+    async currentUser() {
+      const first = members[0];
+      if (!first) throw new SourceError('upstream_error', 'Nessun membro nei dati demo');
+      return { ...first };
+    },
     async listMembers() {
       return members.map((m) => ({ ...m }));
     },

@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { OscarNight } from '../team';
 import { THEMES } from '../theme';
 import { buildStoryCards } from './build';
 import { CardExportButton } from './export';
@@ -96,10 +95,6 @@ export function CardsDemo() {
             );
           })}
         </ul>
-
-        <section aria-label="oscar" style={{ height: 900, borderRadius: 20, overflow: 'hidden' }}>
-          <OscarNight awards={data.awards} />
-        </section>
       </div>
     </main>
   );

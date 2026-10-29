@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import type { CalendarStats, Member, TeamAwards, WrappedStats } from '@git-wrapped/contracts';
+import type { CalendarStats, WrappedStats } from '@git-wrapped/contracts';
 
 /**
  * Interfacce tra i moduli del frontend, congelate a `contracts-v1`.
  * - A6 (`story/`, `theme/`) implementa `StoryPlayerProps` e `ThemeName`.
- * - A7 (`cards/`, `team/`) implementa `BuildStoryCards`, `CardExportButtonProps`, `OscarNightProps`, `MemberPickerProps`.
+ * - A7 (`cards/`) implementa `BuildStoryCards` e `CardExportButtonProps`.
  * - A8 (`calendar/`) implementa `CalendarUploadProps`.
  */
 
@@ -49,19 +49,6 @@ export interface CardExportButtonProps {
   card: StoryCard;
   /** Nome del file senza estensione, es. `git-wrapped-2026-key_numbers`. */
   fileName: string;
-}
-
-export interface OscarNightProps {
-  awards: TeamAwards;
-  onBack?: () => void;
-}
-
-export interface MemberPickerProps {
-  members: Member[];
-  year: number;
-  demoMode: boolean;
-  onPick: (member: Member) => void;
-  onOpenOscar: () => void;
 }
 
 export interface CalendarUploadProps {

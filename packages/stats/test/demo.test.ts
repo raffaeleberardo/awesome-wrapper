@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BADGE_IDS,
-  PERSONALITY_IDS,
-  teamAwardsSchema,
-  wrappedStatsSchema,
-} from '@git-wrapped/contracts';
-import { DEMO_YEAR, demoActivities, demoMembers } from '@git-wrapped/fixtures';
-import { computeTeamAwards, computeWrappedStats } from '../src/index';
+import { BADGE_IDS, PERSONALITY_IDS, wrappedStatsSchema } from '@git-wrapped/contracts';
+import { demoActivities, demoMembers } from '@git-wrapped/fixtures';
+import { computeWrappedStats } from '../src/index';
 
 /** Verifica sui dati demo di A5 (team finto di 8 persone): nessuno skip. */
 const activities = Object.values(demoActivities);
@@ -23,8 +18,5 @@ describe('dati demo', () => {
     // Il team demo è progettato con una personalità dominante diversa per ciascuno degli 8.
     const personalities = new Set(stats.map((s) => s.personality.id));
     expect(PERSONALITY_IDS.filter((id) => !personalities.has(id))).toEqual([]);
-
-    const awards = computeTeamAwards(stats, DEMO_YEAR);
-    expect(() => teamAwardsSchema.parse(awards)).not.toThrow();
   });
 });

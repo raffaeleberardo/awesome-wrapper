@@ -69,6 +69,23 @@ body,
   }
 }
 
+/* Schermata di attesa: barra che segue la stima, frase che entra dal basso. */
+.gw-loading-fill {
+  transform-origin: left center;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gw-loading-line {
+  animation: gw-line-in 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes gw-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+}
+
 /* Focus sempre visibile: doppio anello bianco/nero, leggibile su qualsiasi palette. */
 .gw-control:focus-visible {
   outline: 3px solid #fff;
@@ -80,5 +97,9 @@ body,
   .gw-story *,
   .gw-story-backdrop {
     transition: none !important;
+  }
+
+  .gw-loading-line {
+    animation: none;
   }
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { awardIdSchema, badgeIdSchema, cardIdSchema, personalityIdSchema } from './catalog';
+import { badgeIdSchema, cardIdSchema, personalityIdSchema } from './catalog';
 
 /**
  * Struttura del catalogo dei testi italiani (`packages/copy`).
@@ -10,7 +10,6 @@ import { awardIdSchema, badgeIdSchema, cardIdSchema, personalityIdSchema } from 
 export const COPY_PLACEHOLDERS = {
   badges: ['value'],
   personalities: ['name'],
-  awards: ['winner', 'value', 'detail'],
   cards: ['name', 'value', 'year'],
   horoscope: ['name', 'year'],
   loading: [],
@@ -29,8 +28,6 @@ export const UI_KEYS = [
   'app_title',
   'app_tagline',
   'demo_mode_banner',
-  'pick_member',
-  'pick_member_hint',
   'start_story',
   'loading_story',
   'download_png',
@@ -42,10 +39,9 @@ export const UI_KEYS = [
   'calendar_parsing',
   'calendar_error',
   'calendar_skip',
-  'oscar_title',
-  'oscar_cta',
   'error_generic',
-  'error_not_found',
+  // `contracts-v3`: suggerimento sul token negli errori `unauthorized` e `bot_token`.
+  'error_token_hint',
   'retry',
   'pause',
   'resume',
@@ -53,8 +49,9 @@ export const UI_KEYS = [
   'previous',
   'close',
   'restart',
+  // `contracts-v3`: fine della storia, con invito a rivederla.
+  'story_end',
   // Etichette dei numeri nelle card (`contracts-v2`). Brevi: stanno sotto un numero grande.
-  'search_members',
   'label_commits',
   'label_lines_added',
   'label_lines_deleted',
@@ -101,7 +98,6 @@ export const copyCatalogSchema = z.object({
     personalityIdSchema,
     z.object({ name: text, description: text, emoji: z.string().min(1) }),
   ),
-  awards: z.record(awardIdSchema, titleDescription),
   cards: z.record(cardIdSchema, z.object({ title: text, subtitle: text })),
   /** Oroscopo combinabile: una frase per gruppo, scelta col seme. Almeno 42 frasi in tutto. */
   horoscope: z.object({

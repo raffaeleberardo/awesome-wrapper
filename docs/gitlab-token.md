@@ -1,23 +1,19 @@
 # Creare il token GitLab
 
-Git Wrapped legge le attività del team da GitLab con un token. Il token consigliato è un **Group Access Token**: appartiene al gruppo, non a una persona, e può solo leggere.
+Git Wrapped mostra **il tuo** anno su GitLab, e solo il tuo. Per capire chi sei usa il token: all'avvio chiede a GitLab a chi appartiene (`GET /user`) e prepara il wrapped di quella persona. Per questo serve un **Personal Access Token** tuo, con il solo scope `read_api`.
 
-> **Nota sulle versioni.** I nomi dei menu, i ruoli disponibili e i piani che includono i token cambiano tra versioni e licenze di GitLab. I passi qui sotto descrivono il flusso generale: se una voce non corrisponde a quella che vedi, consulta la documentazione GitLab della tua istanza.
+Ognuno clona il repository, mette il proprio token nel proprio `.env` e avvia l'app sul proprio computer con `make up`. Il token non va condiviso con nessuno, nemmeno con i colleghi del team.
 
-## Cosa serve
-
-- Il percorso del gruppo che contiene i progetti del team, per esempio `azienda/team`.
-- Di norma il ruolo **Owner** del gruppo, necessario per creare i token di gruppo.
+> **Nota sulle versioni.** I nomi dei menu cambiano tra versioni di GitLab. I passi qui sotto descrivono il flusso generale: se una voce non corrisponde a quella che vedi, consulta la documentazione GitLab della tua istanza.
 
 ## Creare il token
 
-1. Apri il gruppo e vai su **Impostazioni > Token di accesso** (in inglese: _Settings > Access tokens_).
+1. In GitLab, clicca sul tuo avatar e apri **Preferenze > Token di accesso** (in inglese: _Preferences > Access tokens_, a volte _Personal access tokens_).
 2. Clicca su **Aggiungi nuovo token**.
 3. Dai un nome riconoscibile, per esempio `git-wrapped`.
-4. Imposta una **data di scadenza**. Per un recap annuale conviene una durata breve e ricordarsi della scadenza: quando il token scade, l'app smette di funzionare finché non ne crei uno nuovo.
-5. Scegli il **ruolo Reporter**.
-6. Seleziona **un solo scope: `read_api`**.
-7. Crea il token e copialo subito: GitLab lo mostra una sola volta.
+4. Imposta una **data di scadenza** breve: per un recap annuale bastano pochi giorni o settimane. Quando il token scade l'app risponde con un errore di token non valido, finché non ne crei uno nuovo.
+5. Seleziona **un solo scope: `read_api`**. Non servono altri scope.
+6. Crea il token e copialo subito: GitLab lo mostra una sola volta.
 
 ## Dove metterlo
 
@@ -25,17 +21,27 @@ Nel file `.env`, alla radice del repository:
 
 ```bash
 GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
+# Facoltativo: limita la lettura a un gruppo e ai suoi sottogruppi.
 GITLAB_GROUP=azienda/team
 ```
 
+Se `GITLAB_GROUP` resta vuoto si leggono tutti i gruppi di cui fai parte (con qualsiasi ruolo, da Guest in su). Con un gruppo impostato si leggono solo i suoi progetti e quelli dei sottogruppi: è il modo più semplice per lasciare fuori progetti personali o di altri team.
+
 Il file `.env` è nel `.gitignore`. Non incollare il token in chat, ticket, screenshot o commit. Se pensi che sia stato esposto, revocalo subito dalla stessa pagina **Token di accesso** e creane un altro.
+
+## Perché non un Group o Project Access Token
+
+I Group Access Token e i Project Access Token non appartengono a una persona: GitLab crea per ciascuno un **utente bot** (con username come `group_123_bot_...` o `project_456_bot_...`). Il wrapped di un bot non ha senso, quindi l'app li rifiuta: `GET /api/me` risponde `403` con codice `bot_token` e l'interfaccia chiede un Personal Access Token.
+
+Lo stesso vale per qualunque account bot o di servizio: il wrapped è sempre di chi possiede il token.
 
 ## Cosa può fare
 
-Con `read_api` il token legge, per i membri del gruppo, quello che serve al recap:
+Con `read_api` il token legge quello che tu puoi già leggere su GitLab. L'app usa solo quello che serve al tuo recap, nei gruppi letti:
 
-- progetti del gruppo e dei sottogruppi;
-- commit (con messaggi, file toccati e righe aggiunte o rimosse);
+- i tuoi dati di base (`GET /user`) e i membri dei gruppi, per dare un nome ai colleghi con cui interagisci;
+- i progetti dei gruppi e dei sottogruppi;
+- i tuoi commit (con messaggi, file toccati e righe aggiunte o rimosse);
 - merge request, approvazioni e pipeline;
 - deployment;
 - eventi di push e di issue;
@@ -44,26 +50,19 @@ Con `read_api` il token legge, per i membri del gruppo, quello che serve al reca
 ## Cosa non può fare, e cosa non legge
 
 - **Non scrive nulla**: non crea commit, commenti, merge request né modifiche di alcun tipo.
-- **Vede solo ciò che il ruolo Reporter vede** nel gruppo: progetti che non sono nel gruppo, o a cui il token non ha accesso, non compaiono nelle statistiche.
+- **Vede solo ciò che vedi tu**: progetti a cui non hai accesso, o fuori dal gruppo impostato in `GITLAB_GROUP`, non compaiono nelle statistiche.
+- **Non mostra il wrapped di altre persone**: l'API ha una sola rotta per le statistiche, `GET /api/me`, e restituisce solo le tue.
 - **Non legge il testo di note e descrizioni**: di quelle conta solo la lunghezza.
 - **Non legge i diff per intero**: dei cambiamenti conta solo le righe con TODO, FIXME e XXX.
-- **Non tocca il calendario**: il calendario è un file separato, vedi [docs/calendario-outlook.md](docs/calendario-outlook.md).
+- **Non tocca il calendario**: il calendario è un file separato, vedi [docs/calendario-outlook.md](calendario-outlook.md).
 
 Se in un progetto le impostazioni di GitLab nascondono alcuni dati (per esempio pipeline o deployment), quei dati mancano: l'app non li inventa e omette i badge che dipendono da essi.
 
-## GitLab.com e piani a pagamento
+## Errori comuni
 
-Su GitLab.com la disponibilità dei Group Access Token dipende dal piano del gruppo. Se la voce non compare o è bloccata, verifica il piano nella documentazione GitLab, oppure usa l'alternativa qui sotto.
-
-## Alternativa: Personal Access Token
-
-Se non puoi creare un Group Access Token, puoi usare un **Personal Access Token** con scope `read_api` di un membro del team che abbia almeno il ruolo Reporter sul gruppo. Il risultato è lo stesso, ma con dei compromessi:
-
-- il token è legato a una persona: se quella persona lascia il gruppo o il suo account viene disattivato, il recap si ferma;
-- lo scope `read_api` dà in lettura tutto ciò che quell'account può leggere, anche fuori dal gruppo: è più ampio di quello del bot;
-- la scadenza e la revoca dipendono da quella persona.
-
-Se usi questa strada, conviene un account dedicato in sola lettura piuttosto che l'account personale di un collega.
+- **`unauthorized` (401)**: il token manca, è scritto male, è scaduto o è stato revocato. Creane uno nuovo e aggiorna `.env`, poi riavvia con `make up`.
+- **`bot_token` (403)**: hai usato un Group o Project Access Token. Serve un Personal Access Token, vedi sopra.
+- **`not_found` (404)**: il token è valido ma nei gruppi letti non c'è tua attività leggibile. Controlla `GITLAB_GROUP` o lascialo vuoto.
 
 ## Istanze self-hosted
 

@@ -1,4 +1,4 @@
-import type { BadgeId, TeamAward } from '@git-wrapped/contracts';
+import type { BadgeId } from '@git-wrapped/contracts';
 
 const nf = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 });
 const nf1 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
@@ -62,26 +62,6 @@ const EMOJI: Record<string, string> = {
 /** Emoji GitLab (nome) → glifo; se sconosciuta resta `:nome:`. */
 export const emojiGlyph = (name: string): string => EMOJI[name] ?? `:${name}:`;
 
-export function initials(name: string): string {
-  const parts = name
-    .trim()
-    .split(/[\s._-]+/)
-    .filter(Boolean);
-  const first = parts[0]?.[0] ?? '?';
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
-  return (first + last).toUpperCase();
-}
-
-/** Hash stabile di una stringa, per scegliere colori. */
-export function hashString(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
 /** Dimensione del testo (in cqw) che fa stare `text` in `width` cqw, tra `min` e `max`. */
 export function fitSize(text: string, width: number, max: number, min = 3): number {
   const len = Math.max(1, text.length);
@@ -94,13 +74,3 @@ const SHARE_BADGES: ReadonlySet<BadgeId> = new Set<BadgeId>(['night_owl', 'early
 /** `value` di un badge pronto per il segnaposto `{value}`: quote in %, il resto con 1 decimale. */
 export const badgeValue = (id: BadgeId, value: number): string =>
   SHARE_BADGES.has(id) ? pct(value) : fmt1(value);
-
-/** `value` di un premio per `{value}`: rapporto con 2 decimali, giorni e conteggi con 1 al più. */
-export const awardValue = (award: Pick<TeamAward, 'id' | 'value'>): string =>
-  award.id === 'golden_broom' ? fmt2(award.value) : fmt1(award.value);
-
-/** Elenco di nomi all'italiana: «A», «A e B», «A, B e C». */
-export function joinNames(names: readonly string[]): string {
-  if (names.length <= 1) return names[0] ?? '';
-  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;
-}

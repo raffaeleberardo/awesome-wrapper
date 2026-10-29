@@ -1,30 +1,25 @@
 import { z } from 'zod';
-import { memberSchema, year } from './common';
+import { year } from './common';
 import { wrappedStatsSchema } from './stats';
-import { teamAwardsSchema } from './team';
 
 /** Contratto HTTP tra `apps/web` e `apps/api`. Tutte le risposte sono JSON. */
 
 export const API_ROUTES = {
   health: '/api/health',
-  members: '/api/members',
-  /** Parametro di percorso `:username`, query facoltativa `?year=`. */
-  wrapped: '/api/wrapped/:username',
-  /** Query facoltativa `?year=`. */
-  team: '/api/team',
+  /**
+   * Wrapped dell'utente proprietario del token (`GET /user` su GitLab). Query facoltativa
+   * `?year=`. Non esiste una rotta per leggere altri utenti: l'app mostra solo chi la avvia.
+   */
+  me: '/api/me',
 } as const;
 
 export const apiPaths = {
   health: () => API_ROUTES.health,
-  members: () => API_ROUTES.members,
-  wrapped: (username: string, y?: number) =>
-    `/api/wrapped/${encodeURIComponent(username)}${y === undefined ? '' : `?year=${y}`}`,
-  team: (y?: number) => `${API_ROUTES.team}${y === undefined ? '' : `?year=${y}`}`,
+  me: (y?: number) => `${API_ROUTES.me}${y === undefined ? '' : `?year=${y}`}`,
 };
 
 /** Query `?year=`: se assente si usa `WRAPPED_YEAR`. */
 export const yearQuerySchema = z.object({ year: z.coerce.number().pipe(year).optional() });
-export const wrappedParamsSchema = z.object({ username: z.string().min(1) });
 
 export const healthResponseSchema = z.object({
   status: z.literal('ok'),
@@ -35,20 +30,19 @@ export const healthResponseSchema = z.object({
 });
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
-export const membersResponseSchema = z.object({
-  year,
-  members: z.array(memberSchema),
-});
-export type MembersResponse = z.infer<typeof membersResponseSchema>;
+export const meResponseSchema = wrappedStatsSchema;
+export type MeResponse = z.infer<typeof meResponseSchema>;
 
-export const wrappedResponseSchema = wrappedStatsSchema;
-export type WrappedResponse = z.infer<typeof wrappedResponseSchema>;
-
-export const teamResponseSchema = teamAwardsSchema;
-export type TeamResponse = z.infer<typeof teamResponseSchema>;
-
+/**
+ * - `unauthorized`: token mancante, non valido o scaduto (401).
+ * - `bot_token`: il token appartiene a un bot (es. Group/Project Access Token): serve un
+ *   Personal Access Token, perché il wrapped è di una persona (403).
+ * - `not_found`: l'utente del token non ha attività leggibili nei gruppi configurati (404).
+ */
 export const API_ERROR_CODES = [
   'bad_request',
+  'unauthorized',
+  'bot_token',
   'not_found',
   'rate_limited',
   'upstream_error',

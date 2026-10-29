@@ -2,13 +2,9 @@ import {
   apiErrorSchema,
   apiPaths,
   healthResponseSchema,
-  membersResponseSchema,
-  teamResponseSchema,
-  wrappedResponseSchema,
+  meResponseSchema,
   type HealthResponse,
-  type MembersResponse,
-  type TeamResponse,
-  type WrappedResponse,
+  type MeResponse,
 } from '@git-wrapped/contracts';
 import type { z } from 'zod';
 
@@ -40,10 +36,7 @@ async function getJson<T>(path: string, schema: z.ZodType<T>, signal?: AbortSign
 export const api = {
   health: (signal?: AbortSignal): Promise<HealthResponse> =>
     getJson(apiPaths.health(), healthResponseSchema, signal),
-  members: (signal?: AbortSignal): Promise<MembersResponse> =>
-    getJson(apiPaths.members(), membersResponseSchema, signal),
-  wrapped: (username: string, year?: number, signal?: AbortSignal): Promise<WrappedResponse> =>
-    getJson(apiPaths.wrapped(username, year), wrappedResponseSchema, signal),
-  team: (year?: number, signal?: AbortSignal): Promise<TeamResponse> =>
-    getJson(apiPaths.team(year), teamResponseSchema, signal),
+  /** Wrapped del proprietario del token GitLab, rilevato dal server. */
+  me: (year?: number, signal?: AbortSignal): Promise<MeResponse> =>
+    getJson(apiPaths.me(year), meResponseSchema, signal),
 };

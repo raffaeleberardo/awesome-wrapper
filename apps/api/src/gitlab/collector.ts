@@ -191,6 +191,7 @@ export function createCollector(
   const projectConcurrency = options.projectConcurrency ?? 4;
   const groupsCache = new TtlCache<{ all: string[]; roots: string[] }>(ttl);
   const membersCache = new TtlCache<MemberInfo[]>(ttl);
+  const selfCache = new TtlCache<ApiMember | null>(ttl);
   const projectsCache = new TtlCache<ApiProject[]>(ttl);
   const languagesCache = new TtlCache<Record<string, number>>(ttl);
   const priorActivityCache = new TtlCache<string | null>(ttl);
@@ -250,6 +251,13 @@ export function createCollector(
   // --- membri -------------------------------------------------------------------------------
 
   /**
+   * Proprietario del token (`GET /user`), condiviso tra `currentUser` e `loadMembers`.
+   * `null` se GitLab risponde 403/404 (es. token senza scope `read_api`/`read_user`).
+   */
+  const loadSelf = (): Promise<ApiMember | null> =>
+    selfCache.get('self', () => client.getOrNull<ApiMember>('/user'));
+
+  /**
    * Membri dei gruppi più il proprietario del token, che compare sempre (anche se i gruppi
    * non espongono i membri), così le sue statistiche sono sempre scaricabili.
    */
@@ -262,7 +270,7 @@ export function createCollector(
           (m) => m.id,
           (g) => client.getAll<ApiMember>(`/groups/${g}/members/all`),
         ),
-        client.getOrNull<ApiMember>('/user'),
+        loadSelf(),
       ]);
       const raw = self ? [...fromAll, self] : fromAll;
       const seen = new Map<string, MemberInfo>();
@@ -413,6 +421,23 @@ export function createCollector(
   };
 
   // --- API pubblica -------------------------------------------------------------------------
+
+  /**
+   * Il wrapped è di una persona: un token di bot (Group/Project Access Token, utenti
+   * `group_N_bot_...`/`project_N_bot...`) viene rifiutato. Un 401 esce già da `http.ts`
+   * come `SourceError('unauthorized')`.
+   */
+  const currentUser = async (): Promise<Member> => {
+    const self = await loadSelf();
+    if (!self) {
+      // `/user` non leggibile: il token non ha i permessi per identificare il proprietario
+      throw new SourceError('unauthorized', 'Impossibile identificare il proprietario del token');
+    }
+    if (self.bot || isBotUsername(self.username)) {
+      throw new SourceError('bot_token', 'Il token appartiene a un bot, non a una persona');
+    }
+    return { username: self.username, displayName: self.name || self.username };
+  };
 
   const listMembers = async (): Promise<Member[]> => {
     const members = await loadMembers();
@@ -874,5 +899,10 @@ export function createCollector(
       }
     };
 
-  return { listMembers: upstream(listMembers), getActivity: upstream(getActivity), client };
+  return {
+    currentUser: upstream(currentUser),
+    listMembers: upstream(listMembers),
+    getActivity: upstream(getActivity),
+    client,
+  };
 }

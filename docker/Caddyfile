@@ -2,8 +2,8 @@
 	# Niente API di amministrazione, niente HTTPS automatico (davanti c'e' solo la 8080).
 	admin off
 	auto_https off
-	# Log di accesso NON abilitati (nessuna direttiva "log" nel sito): gli URL
-	# /api/wrapped/<username> contengono username e non devono finire nei log.
+	# Log di accesso NON abilitati (nessuna direttiva "log" nel sito): richieste e
+	# risposte riguardano una persona (il proprietario del token) e non devono finire nei log.
 	# Il log di runtime resta, ma senza il campo "request" (che conterrebbe l'URI).
 	log {
 		level WARN

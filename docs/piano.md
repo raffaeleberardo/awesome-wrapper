@@ -2,6 +2,13 @@
 
 Oct 28, 2026 · @Raffaele
 
+> **Nota (`contracts-v3`).** Questo piano è storico. Dopo la Fase 2 il prodotto è cambiato: l'app
+> mostra solo il wrapped della persona che possiede il token (un Personal Access Token, rilevato
+> con `GET /user`, al posto del Group Access Token condiviso) e ognuno la avvia in locale. La
+> scelta del membro (`GET /api/members`, `GET /api/wrapped/:username`) e i premi di team della
+> notte degli Oscar (`GET /api/team`, `TeamAwards`, `computeTeamAwards`) sono stati rimossi. Lo
+> stato attuale è in [`contracts.md`](./contracts.md) e [`architettura.md`](./architettura.md).
+
 ## Obiettivo e vincoli
 
 Costruiamo "Git Wrapped": un recap annuale in stile Spotify Wrapped, il più giocoso possibile, per un team che lavora su GitLab. Si avvia con un solo `docker compose up` e funziona subito anche senza GitLab, grazie alla modalità demo.
@@ -190,16 +197,16 @@ services:
 
 **Variabili d'ambiente** (`.env.example`)
 
-| Variabile           | Default              | Uso                                                                       |
-| ------------------- | -------------------- | ------------------------------------------------------------------------- |
-| `DEMO_MODE`         | `true`               | Usa i dati finti; diventa `false` quando si mette il token                |
-| `GITLAB_URL`        | `https://gitlab.com` | Istanza GitLab, anche self-hosted                                         |
-| `GITLAB_TOKEN`      | vuoto                | Group Access Token con scope `read_api`                                   |
-| `GITLAB_GROUP`      | vuoto                | Percorso del gruppo, es. `azienda/team`; vuoto = tutti i gruppi del token |
-| `WRAPPED_YEAR`      | `2026`               | Anno raccontato                                                           |
-| `TZ`                | `Europe/Rome`        | Fuso per orari e badge notturni                                           |
-| `CACHE_TTL_MINUTES` | `15`                 | Durata della cache in memoria                                             |
-| `GITLAB_CA_CERT`    | vuoto                | Certificato per istanze interne con CA aziendale                          |
+| Variabile           | Default              | Uso                                                                                    |
+| ------------------- | -------------------- | -------------------------------------------------------------------------------------- |
+| `DEMO_MODE`         | `true`               | Usa i dati finti; diventa `false` quando si mette il token                             |
+| `GITLAB_URL`        | `https://gitlab.com` | Istanza GitLab, anche self-hosted                                                      |
+| `GITLAB_TOKEN`      | vuoto                | Personal Access Token con scope `read_api` (da `contracts-v3`)                         |
+| `GITLAB_GROUP`      | vuoto                | Facoltativo: percorso del gruppo, es. `azienda/team`; vuoto = tutti i gruppi del token |
+| `WRAPPED_YEAR`      | `2026`               | Anno raccontato                                                                        |
+| `TZ`                | `Europe/Rome`        | Fuso per orari e badge notturni                                                        |
+| `CACHE_TTL_MINUTES` | `15`                 | Durata della cache in memoria                                                          |
+| `GITLAB_CA_CERT`    | vuoto                | Certificato per istanze interne con CA aziendale                                       |
 
 **Comandi del `Makefile`**
 

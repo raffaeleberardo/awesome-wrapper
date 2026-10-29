@@ -1,5 +1,4 @@
 import type { CopyCatalog, CopyPlaceholder, CopySection } from '@git-wrapped/contracts';
-import { awards } from './awards';
 import { badges } from './badges';
 import { cards } from './cards';
 import { horoscopeTexts } from './horoscope';
@@ -10,7 +9,6 @@ import { intro, loading, outro, ui } from './ui';
 export const copy: CopyCatalog = {
   badges,
   personalities,
-  awards,
   cards,
   horoscope: horoscopeTexts,
   loading,

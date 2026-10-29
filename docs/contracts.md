@@ -1,15 +1,27 @@
-# Contratti — `contracts-v2`
+# Contratti — `contracts-v3`
 
 I contratti vivono in `packages/contracts` (schemi `zod` + tipi TypeScript inferiti) e sono
-**congelati al tag `contracts-v2`** (`CONTRACTS_VERSION = 2`). Le richieste di cambiamento vanno
+**congelati al tag `contracts-v3`** (`CONTRACTS_VERSION = 3`). Le richieste di cambiamento vanno
 in [`contract-requests.md`](./contract-requests.md).
+
+**Novità di `contracts-v3`** rispetto a `contracts-v2` (non retrocompatibili): l'app mostra solo il
+wrapped del proprietario del token GitLab, che deve essere un Personal Access Token.
+
+- Nuova rotta `GET /api/me` (`meResponseSchema`, uguale a `WrappedStats`), `apiPaths.me(year?)`.
+- Rimosse le rotte `GET /api/members`, `GET /api/wrapped/:username` e `GET /api/team`, con
+  `membersResponseSchema`, `wrappedResponseSchema`, `teamResponseSchema` e `wrappedParamsSchema`.
+- Rimossi i premi di team (notte degli Oscar): `team.ts` (`TeamAwards`), `AwardId`/`AWARD_IDS` e la
+  sezione `awards` del catalogo testi.
+- Nuovi codici di errore `unauthorized` (401) e `bot_token` (403).
+- `UiKey`: rimosse `pick_member`, `pick_member_hint`, `search_members`, `oscar_title`, `oscar_cta`,
+  `error_not_found`; aggiunte `error_token_hint` e `story_end`.
 
 **Novità di `contracts-v2`** rispetto a `contracts-v1` (tutte additive, decise da A11 in Fase 2):
 
 - `WrappedStats.pipelines.recoveries`: pipeline verdi subito dopo una rossa (stesso progetto e ref);
-  assente in un payload v1 → `0`. Abilita il premio `pipeline_phoenix`.
+  assente in un payload v1 → `0`. Abilitava il premio `pipeline_phoenix` (rimosso in v3).
 - `EpicMomentKind` `earliest_morning_commit`: minuti dalla mezzanotte del commit più presto tra
-  05:00 e 11:59. Il premio `first_light` passa dalla precisione all'ora a quella al minuto.
+  05:00 e 11:59. Il premio `first_light` (rimosso in v3) passava dalla precisione all'ora a quella al minuto.
 - `UiKey`: `search_members` e le etichette `label_*` dei numeri nelle card.
 
 ```ts
@@ -19,17 +31,16 @@ import { exampleWrappedStats } from '@git-wrapped/contracts/examples';
 
 ## Mappa dei moduli
 
-| File          | Contenuto                                                                                                   |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| `common.ts`   | Primitive: `isoDateTime`, `isoDate`, istogrammi (24 ore, 7 giorni con 0 = lunedì, 12 mesi), `Member`        |
-| `catalog.ts`  | Cataloghi chiusi: `BadgeId`, `PersonalityId`, `PersonalityDimension`, `AwardId`, `CardId`, `EpicMomentKind` |
-| `raw.ts`      | `RawActivity`: dati grezzi GitLab di una persona per un anno                                                |
-| `stats.ts`    | `WrappedStats`: statistiche annuali di una persona                                                          |
-| `team.ts`     | `TeamAwards`: premi della notte degli Oscar                                                                 |
-| `calendar.ts` | `CalendarEvent` (normalizzato, senza testi) e `CalendarStats`                                               |
-| `copy.ts`     | Struttura del catalogo testi `CopyCatalog`, chiavi `UiKey`, segnaposto ammessi per sezione                  |
-| `api.ts`      | Rotte, schemi di risposta, `ApiError`, helper `apiPaths`                                                    |
-| `examples.ts` | Un esempio valido per ogni tipo (export `@git-wrapped/contracts/examples`)                                  |
+| File          | Contenuto                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| `common.ts`   | Primitive: `isoDateTime`, `isoDate`, istogrammi (24 ore, 7 giorni con 0 = lunedì, 12 mesi), `Member` |
+| `catalog.ts`  | Cataloghi chiusi: `BadgeId`, `PersonalityId`, `PersonalityDimension`, `CardId`, `EpicMomentKind`     |
+| `raw.ts`      | `RawActivity`: dati grezzi GitLab di una persona per un anno                                         |
+| `stats.ts`    | `WrappedStats`: statistiche annuali di una persona                                                   |
+| `calendar.ts` | `CalendarEvent` (normalizzato, senza testi) e `CalendarStats`                                        |
+| `copy.ts`     | Struttura del catalogo testi `CopyCatalog`, chiavi `UiKey`, segnaposto ammessi per sezione           |
+| `api.ts`      | Rotte, schemi di risposta, `ApiError`, helper `apiPaths`                                             |
+| `examples.ts` | Un esempio valido per ogni tipo (export `@git-wrapped/contracts/examples`)                           |
 
 ## Convenzioni
 
@@ -39,7 +50,7 @@ import { exampleWrappedStats } from '@git-wrapped/contracts/examples';
   Dei diff si contano solo le righe con TODO/FIXME/XXX (`todosAdded`, `todosRemoved`).
 - **Force push**: GitLab non li distingue in modo affidabile negli eventi, quindi non esistono
   nei contratti e il badge "Revisionista storico" non è nel catalogo.
-- **Dati mancanti**: se GitLab non fornisce un dato, il campo è `null` o il badge/premio viene
+- **Dati mancanti**: se GitLab non fornisce un dato, il campo è `null` o il badge viene
   omesso. Mai inventare.
 - **Personalità**: sempre presente, mai "nessuna". Punteggi per dimensione in `[0, 1]`.
 - **Oroscopo**: `horoscopeSeed` è un uint32 da hash(username + anno); `packages/copy` sceglie una
@@ -73,32 +84,37 @@ Le soglie sono di A3 e vanno documentate in `packages/stats/BADGES.md`.
 `metronome`, calcolate sulle dimensioni `nocturnality`, `collaboration`, `cleanup`, `changeSize`,
 `cadence`, `verbosity`, `regularity`, `urgency`.
 
-## Premi di team
-
-`best_duet`, `night_shift`, `pipeline_phoenix`, `emoji_of_the_year`, `marathon_mr`, `hemingway`,
-`tolstoy`, `golden_broom`, `friday_courage`, `first_light`. Un premio senza dati sufficienti viene omesso.
-
 ## API HTTP
 
-| Rotta                              | Risposta          | Note                                            |
-| ---------------------------------- | ----------------- | ----------------------------------------------- |
-| `GET /api/health`                  | `HealthResponse`  | Usata dall'healthcheck del container            |
-| `GET /api/members`                 | `MembersResponse` | Membri del gruppo, bot esclusi                  |
-| `GET /api/wrapped/:username?year=` | `WrappedStats`    | 404 `not_found` se lo username non è nel gruppo |
-| `GET /api/team?year=`              | `TeamAwards`      | Calcolato su tutti i membri                     |
+| Rotta               | Risposta                      | Note                                                       |
+| ------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `GET /api/health`   | `HealthResponse`              | Usata dall'healthcheck del container                       |
+| `GET /api/me?year=` | `MeResponse` (`WrappedStats`) | Wrapped del proprietario del token (`GET /user` su GitLab) |
 
-Errori: corpo `ApiError` con `code` tra `bad_request`, `not_found`, `rate_limited`,
-`upstream_error`, `internal`, e un `message` in italiano senza dati personali.
+Non esiste una rotta per leggere le statistiche di altre persone. In modalità demo `GET /api/me`
+restituisce un membro fisso del team finto.
+
+Errori: corpo `ApiError` con un `message` in italiano senza dati personali e `code` tra:
+
+| `code`           | Stato | Quando                                                                  |
+| ---------------- | ----- | ----------------------------------------------------------------------- |
+| `bad_request`    | 400   | Query non valida (es. `year` fuori intervallo)                          |
+| `unauthorized`   | 401   | Token mancante, non valido, scaduto o revocato                          |
+| `bot_token`      | 403   | Il token appartiene a un bot (Group/Project Access Token): serve un PAT |
+| `not_found`      | 404   | L'utente del token non ha attività leggibili nei gruppi letti           |
+| `rate_limited`   | 429   | GitLab limita le richieste                                              |
+| `upstream_error` | 502   | GitLab non risponde come previsto                                       |
+| `internal`       | 500   | Errore imprevisto del server                                            |
 
 ## Interfacce interne congelate
 
 Oltre al pacchetto dei contratti, A0 congela tre confini tra agenti:
 
-| File                                                                  | Confine                                                                                       |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `apps/api/src/source.ts`                                              | `ActivitySource` tra collettore (A1) e server (A2)                                            |
-| `apps/web/src/shared/types.ts`                                        | `StoryCard`, props del player (A6), delle card e della pagina Oscar (A7), del calendario (A8) |
-| `packages/stats/src/index.ts`, `packages/stats/src/calendar/index.ts` | Firme di `computeWrappedStats`, `computeTeamAwards`, `horoscopeSeed`, `computeCalendarStats`  |
+| File                                                                  | Confine                                                                                   |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `apps/api/src/source.ts`                                              | `ActivitySource` tra collettore (A1) e server (A2), con `currentUser()` da `contracts-v3` |
+| `apps/web/src/shared/types.ts`                                        | `StoryCard`, props del player (A6), delle card (A7), del calendario (A8)                  |
+| `packages/stats/src/index.ts`, `packages/stats/src/calendar/index.ts` | Firme di `computeWrappedStats`, `horoscopeSeed`, `computeCalendarStats`                   |
 
 ## Esempi
 
@@ -241,7 +257,7 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
 }
 ```
 
-### WrappedStats (`GET /api/wrapped/:username`)
+### WrappedStats (`GET /api/me`)
 
 ```json
 {
@@ -425,50 +441,6 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
 }
 ```
 
-### TeamAwards (`GET /api/team`)
-
-```json
-{
-  "schemaVersion": 1,
-  "year": 2026,
-  "teamSize": 8,
-  "awards": [
-    {
-      "id": "best_duet",
-      "winners": [
-        {
-          "username": "giulia.ferri",
-          "displayName": "Giulia Ferri"
-        },
-        {
-          "username": "marco.vitale",
-          "displayName": "Marco Vitale"
-        }
-      ],
-      "value": 214,
-      "detail": null
-    },
-    {
-      "id": "emoji_of_the_year",
-      "winners": [
-        {
-          "username": "giulia.ferri",
-          "displayName": "Giulia Ferri"
-        }
-      ],
-      "value": 90,
-      "detail": "tada"
-    }
-  ],
-  "teamTotals": {
-    "commits": 4210,
-    "mergeRequestsMerged": 512,
-    "pipelines": 7311,
-    "emojiGiven": 1904
-  }
-}
-```
-
 ### CalendarEvent
 
 ```json
@@ -520,25 +492,7 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
   "status": "ok",
   "demoMode": true,
   "year": 2026,
-  "contractsVersion": 2
-}
-```
-
-### MembersResponse (`GET /api/members`)
-
-```json
-{
-  "year": 2026,
-  "members": [
-    {
-      "username": "giulia.ferri",
-      "displayName": "Giulia Ferri"
-    },
-    {
-      "username": "marco.vitale",
-      "displayName": "Marco Vitale"
-    }
-  ]
+  "contractsVersion": 3
 }
 ```
 
@@ -547,8 +501,8 @@ Generati da `packages/contracts/src/examples.ts` con `pnpm docs:contracts`.
 ```json
 {
   "error": {
-    "code": "not_found",
-    "message": "Questa persona non fa parte del gruppo."
+    "code": "bot_token",
+    "message": "Questo token appartiene a un bot: serve un Personal Access Token personale."
   }
 }
 ```

@@ -1,11 +1,6 @@
 import { Writable } from 'node:stream';
 import { vi } from 'vitest';
-import {
-  exampleMembersResponse,
-  exampleRawActivity,
-  exampleTeamAwards,
-  exampleWrappedStats,
-} from '@git-wrapped/contracts/examples';
+import { exampleRawActivity, exampleWrappedStats } from '@git-wrapped/contracts/examples';
 import type { Member, RawActivity } from '@git-wrapped/contracts';
 import type { AppConfig } from '../src/config';
 import { createLogger } from '../src/logger';
@@ -23,10 +18,19 @@ export const testConfig: AppConfig = {
   gitlabCaCert: undefined,
 };
 
+/** Proprietario del token nei test. */
+export const testUser: Member = { username: 'giulia.ferri', displayName: 'Giulia Ferri' };
+/** Membri finti dei gruppi, proprietario del token compreso. */
+export const testMembers: Member[] = [
+  testUser,
+  { username: 'marco.vitale', displayName: 'Marco Vitale' },
+];
+
 /** Sorgente fake costruita sugli esempi dei contratti. */
 export function makeSource(overrides: Partial<ActivitySource> = {}) {
-  const members: Member[] = exampleMembersResponse.members;
+  const members = testMembers;
   const defaults: ActivitySource = {
+    currentUser: async () => ({ ...testUser }),
     listMembers: async () => members,
     getActivity: async (username, year): Promise<RawActivity | null> => {
       const member = members.find((m) => m.username === username);
@@ -34,6 +38,9 @@ export function makeSource(overrides: Partial<ActivitySource> = {}) {
     },
   };
   return {
+    currentUser: vi.fn<ActivitySource['currentUser']>(
+      overrides.currentUser ?? defaults.currentUser,
+    ),
     listMembers: vi.fn<ActivitySource['listMembers']>(
       overrides.listMembers ?? defaults.listMembers,
     ),
@@ -50,7 +57,6 @@ export function makeCompute() {
       member: raw.member,
       year: raw.year,
     })),
-    computeTeamAwards: vi.fn((_stats, year: number) => ({ ...exampleTeamAwards, year })),
   } satisfies ComputeFns;
 }
 

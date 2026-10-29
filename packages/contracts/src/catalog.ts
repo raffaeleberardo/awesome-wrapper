@@ -71,31 +71,6 @@ export const PERSONALITY_DIMENSIONS = [
 export const personalityDimensionSchema = z.enum(PERSONALITY_DIMENSIONS);
 export type PersonalityDimension = z.infer<typeof personalityDimensionSchema>;
 
-export const AWARD_IDS = [
-  /** Miglior duetto: la coppia che si è scambiata più review/commenti/emoji */
-  'best_duet',
-  /** Turno di notte: chi ha fatto il commit più tardi dell'anno */
-  'night_shift',
-  /** Fenice delle pipeline: più pipeline verdi subito dopo una rossa */
-  'pipeline_phoenix',
-  /** Emoji dell'anno: l'emoji più usata dal team (vincitore = chi l'ha usata di più) */
-  'emoji_of_the_year',
-  /** La MR più longeva: aperta da più tempo */
-  'marathon_mr',
-  /** Premio Hemingway: il messaggio di commit più corto */
-  'hemingway',
-  /** Premio Tolstoj: il messaggio di commit più lungo */
-  'tolstoy',
-  /** Spazzino d'oro: più righe cancellate in proporzione a quelle aggiunte */
-  'golden_broom',
-  /** Coraggio del venerdì: più deploy di venerdì pomeriggio */
-  'friday_courage',
-  /** Mattiniero del team: il commit più presto dell'anno */
-  'first_light',
-] as const;
-export const awardIdSchema = z.enum(AWARD_IDS);
-export type AwardId = z.infer<typeof awardIdSchema>;
-
 /** Card della storia, nell'ordine in cui vengono mostrate. */
 export const CARD_IDS = [
   'intro',

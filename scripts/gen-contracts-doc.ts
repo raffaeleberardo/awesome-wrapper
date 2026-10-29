@@ -11,12 +11,10 @@ const docPath = fileURLToPath(new URL('../docs/contracts.md', import.meta.url));
 
 const sections: [string, unknown][] = [
   ['RawActivity', ex.exampleRawActivity],
-  ['WrappedStats (`GET /api/wrapped/:username`)', ex.exampleWrappedStats],
-  ['TeamAwards (`GET /api/team`)', ex.exampleTeamAwards],
+  ['WrappedStats (`GET /api/me`)', ex.exampleWrappedStats],
   ['CalendarEvent', ex.exampleCalendarEvent],
   ['CalendarStats', ex.exampleCalendarStats],
   ['HealthResponse (`GET /api/health`)', ex.exampleHealthResponse],
-  ['MembersResponse (`GET /api/members`)', ex.exampleMembersResponse],
   ['ApiError (risposte 4xx/5xx)', ex.exampleApiError],
 ];
 

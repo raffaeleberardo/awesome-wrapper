@@ -29,17 +29,6 @@ export const CARD_IDS = [
   'summary',
 ] as const;
 
-export const DEMO_MEMBERS = [
-  'Giulia Ferri',
-  'Marco Vitale',
-  'Chiara Esposito',
-  'Luca Moretti',
-  'Sara Bianchi',
-  'Davide Rinaldi',
-  'Elena Costa',
-  'Andrea Galli',
-];
-
 /** Raccoglie errori della pagina e violazioni CSP (da verificare a fine test). */
 export function watchErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -55,10 +44,12 @@ export function watchErrors(page: Page): string[] {
   return errors;
 }
 
-/** Dalla home apre la storia di un membro e salta il calendario. */
-export async function openStory(page: Page, member: string, opts: { skipCalendar?: boolean } = {}) {
+/**
+ * Apre l'app: senza scelta del membro si arriva subito al percorso dell'utente del token
+ * (in demo un utente fisso). Di default salta il calendario e aspetta il player.
+ */
+export async function openStory(page: Page, opts: { skipCalendar?: boolean } = {}) {
   await page.goto('/');
-  await page.getByRole('button', { name: new RegExp(member) }).click();
   await expect(page.getByTestId('calendar-privacy-note')).toBeVisible();
   if (opts.skipCalendar !== false) {
     await page.getByRole('button', { name: /Salta/ }).click();

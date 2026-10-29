@@ -3,7 +3,8 @@ import fsp from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { makeApp } from './helpers';
+import { SourceError } from '../src/source';
+import { makeApp, makeSource } from './helpers';
 
 const apiRoot = path.resolve(__dirname, '..');
 
@@ -58,13 +59,7 @@ describe('nessuna scrittura su disco', () => {
 
     const before = listFiles(apiRoot);
     const { app } = makeApp();
-    for (const url of [
-      '/api/health',
-      '/api/members',
-      '/api/wrapped/giulia.ferri',
-      '/api/wrapped/sconosciuto',
-      '/api/team',
-    ]) {
+    for (const url of ['/api/health', '/api/me', '/api/me?year=2025', '/api/boh']) {
       await app.inject(url);
     }
     await app.close();
@@ -76,26 +71,52 @@ describe('nessuna scrittura su disco', () => {
 });
 
 describe('log', () => {
-  it('non contengono username, token né URL reali', async () => {
+  it('non contengono username, nome, token né URL reali', async () => {
     const { app, sink } = makeApp();
     const token = 'glpat-SEGRETISSIMO-123';
     const res = await app.inject({
-      url: '/api/wrapped/giulia.ferri?year=2026',
+      url: '/api/me?year=2026',
       headers: { authorization: `Bearer ${token}`, cookie: 'sessione=abc' },
     });
     expect(res.statusCode).toBe(200);
-    await app.inject({
-      url: '/api/wrapped/sconosciuto.utente',
-      headers: { authorization: `Bearer ${token}` },
-    });
+    // la risposta contiene i dati dell'utente, i log no
+    expect(res.body).toContain('giulia.ferri');
+    await app.inject({ url: '/api/me?year=abc', headers: { authorization: `Bearer ${token}` } });
     await app.close();
 
     const output = sink.lines.join('');
-    expect(output).toContain('/api/wrapped/:username'); // pattern della rotta
-    for (const secret of [token, 'giulia.ferri', 'sconosciuto.utente', 'Giulia', 'sessione=abc']) {
+    expect(output).toContain('/api/me'); // pattern della rotta
+    for (const secret of [
+      token,
+      'giulia.ferri',
+      'Giulia',
+      'marco.vitale',
+      'sessione=abc',
+      'year=2026',
+      'year=abc',
+    ]) {
       expect(output).not.toContain(secret);
     }
     // Nessun corpo di risposta nei log.
     expect(output).not.toContain('totals');
+  });
+
+  it('gli errori della sorgente non portano nei log né in risposta token o username', async () => {
+    const token = 'glpat-SEGRETISSIMO-456';
+    for (const code of ['unauthorized', 'bot_token'] as const) {
+      const source = makeSource({
+        currentUser: async () => {
+          throw new SourceError(code, `${token} group_9_bot_xyz`);
+        },
+      });
+      const { app, sink } = makeApp({ source });
+      const res = await app.inject('/api/me');
+      await app.close();
+      for (const text of [res.body, sink.lines.join('')]) {
+        expect(text).not.toContain(token);
+        expect(text).not.toContain('group_9_bot_xyz');
+      }
+      expect(sink.lines.join('')).toContain(code);
+    }
   });
 });

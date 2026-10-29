@@ -1,6 +1,8 @@
 # Git Wrapped
 
-Il recap annuale del team, in stile Spotify Wrapped: storie a schermo intero con le tue statistiche GitLab, badge curiosi, una personalità tutta tua, un oroscopo e la notte degli Oscar del team. Funziona subito, anche senza GitLab, grazie ai dati finti della modalità demo.
+Il tuo anno su GitLab, in stile Spotify Wrapped: storie a schermo intero con le tue statistiche, badge curiosi, una personalità tutta tua e un oroscopo. Funziona subito, anche senza GitLab, grazie ai dati finti della modalità demo.
+
+L'app mostra solo il wrapped di chi la avvia: riconosce la persona dal token GitLab, non c'è una lista di colleghi da sfogliare. È pensata per girare in locale: ognuno clona il repository, mette il proprio token nel proprio `.env` e la avvia sul proprio computer.
 
 ## Avvio in 3 comandi
 
@@ -12,13 +14,13 @@ make demo
 
 Poi apri **http://localhost:8080** nel browser. Serve Docker, vedi [Requisiti](#requisiti).
 
-La modalità demo usa un team inventato: nessun token, nessuna configurazione.
+La modalità demo mostra il wrapped di una persona inventata (Giulia Ferri, da un team finto di otto): nessun token, nessuna configurazione.
 
 ## Passare ai dati reali
 
 1. Crea il file di configurazione: `cp .env.example .env`
-2. Apri `.env` e compila `GITLAB_TOKEN` (un Group Access Token con scope `read_api`) e, se vuoi limitarti a un gruppo, `GITLAB_GROUP` (il percorso, per esempio `azienda/team`; se resta vuoto si leggono tutti i gruppi di cui il token fa parte). Non serve toccare `DEMO_MODE`: `make up` usa sempre i dati reali, `make demo` sempre quelli finti.
-3. Avvia con `make up` e apri http://localhost:8080.
+2. Apri `.env` e compila `GITLAB_TOKEN` con il **tuo Personal Access Token** (scope `read_api`) e, se vuoi limitarti a un gruppo, `GITLAB_GROUP` (il percorso, per esempio `azienda/team`; se resta vuoto si leggono tutti i gruppi di cui fai parte). I Group e Project Access Token non vanno bene: appartengono a un bot, e il wrapped è di una persona. Non serve toccare `DEMO_MODE`: `make up` usa sempre i dati reali, `make demo` sempre quelli finti.
+3. Avvia con `make up` e apri http://localhost:8080: vedrai il wrapped della persona a cui appartiene il token.
 
 Come creare il token: [docs/gitlab-token.md](docs/gitlab-token.md). Il file `.env` è escluso da Git: non committarlo.
 
@@ -44,11 +46,12 @@ Le variabili d'ambiente sono documentate in `.env.example`: le principali sono `
 
 ## Privacy in breve
 
-- Il token GitLab è di sola lettura (`read_api`) e sta solo nel tuo `.env`.
+- Il token GitLab è tuo, di sola lettura (`read_api`) e sta solo nel tuo `.env`, sul tuo computer.
+- L'app mostra solo il tuo wrapped: non esiste una rotta per leggere le statistiche di altre persone.
 - Le statistiche restano in memoria per 15 minuti (`CACHE_TTL_MINUTES`). Non c'è un database, non ci sono volumi, e nulla viene scritto su disco.
 - Il calendario `.ics` viene letto solo nel browser e non viene mai inviato al server.
 - I PNG si scaricano solo quando lo scegli tu: è l'unico dato che esce dall'app.
-- Badge e premi sono giochi, non metriche di produttività.
+- Badge, personalità e oroscopo sono giochi, non metriche di produttività.
 
 Dettagli: [docs/privacy.md](docs/privacy.md).
 
@@ -69,12 +72,12 @@ pnpm lint
 git-wrapped/
 ├── apps/
 │   ├── api/          # server Fastify: rotte, cache, collettore GitLab (src/gitlab)
-│   └── web/          # SPA React: storie, card, premi del team, calendario
+│   └── web/          # SPA React: storie, card, calendario
 ├── packages/
 │   ├── contracts/    # schemi zod condivisi: fonte di verità per API e statistiche
 │   ├── stats/        # motore statistiche e badge; anche il calendario, che gira nel browser
 │   ├── copy/         # testi in italiano
-│   └── fixtures/     # team finto e file .ics di esempio
+│   └── fixtures/     # team finto (per la demo) e file .ics di esempio
 ├── docker/           # Dockerfile di api e web, Caddyfile
 ├── e2e/              # test end-to-end con Playwright
 ├── docs/             # documentazione

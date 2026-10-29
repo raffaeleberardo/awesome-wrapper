@@ -2,10 +2,18 @@ import type { Member, RawActivity } from '@git-wrapped/contracts';
 
 /**
  * Confine tra il collettore (A1, `src/gitlab`) e il server (A2).
- * Congelato a `contracts-v1`: entrambi lo importano, nessuno dei due lo modifica.
+ * Versione `contracts-v3`: aggiunto `currentUser()`, l'app mostra solo l'utente del token.
  */
 export interface ActivitySource {
-  /** Membri del gruppo (diretti e ereditati), esclusi i bot. */
+  /**
+   * Proprietario del token. Lancia `SourceError('unauthorized')` se il token non è valido e
+   * `SourceError('bot_token')` se appartiene a un bot. In demo: un membro fisso del team finto.
+   */
+  currentUser(): Promise<Member>;
+  /**
+   * Membri del gruppo (diretti e ereditati), esclusi i bot. Uso solo interno: serve alle
+   * statistiche social dell'utente (nomi dei colleghi con cui interagisce), mai esposto via API.
+   */
   listMembers(): Promise<Member[]>;
   /** Attività di un membro per l'anno dato; `null` se lo username non è nel gruppo. */
   getActivity(username: string, year: number): Promise<RawActivity | null>;
@@ -27,7 +35,7 @@ export interface GitLabSourceConfig {
  */
 export class SourceError extends Error {
   constructor(
-    readonly code: 'rate_limited' | 'upstream_error' | 'unauthorized',
+    readonly code: 'rate_limited' | 'upstream_error' | 'unauthorized' | 'bot_token',
     message: string,
   ) {
     super(message);

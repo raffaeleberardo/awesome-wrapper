@@ -1,4 +1,4 @@
-# Badge, personalità e premi — regole del motore (`packages/stats`)
+# Badge e personalità — regole del motore (`packages/stats`)
 
 Fonte di verità delle soglie: `BADGE_THRESHOLDS` in `src/badges.ts`. Se cambi un numero là,
 aggiornalo qui (e avvisa chi scrive i testi e i dati demo).
@@ -122,21 +122,3 @@ pensando"): mai "nessuna".
 
 Il peso 0,85 su `regularity` evita che chiunque lavori in orario d'ufficio diventi Metronomo:
 basta un tratto netto in un'altra dimensione per prevalere.
-
-## Premi di team (`computeTeamAwards`)
-
-Calcolati solo dalle `WrappedStats` dell'anno richiesto. Pari merito ammessi (vincitori in ordine
-di username; `value` e `detail` del primo). Un premio senza candidati viene omesso.
-
-| Premio              | Regola                                                                                                                                                                   | `value`                 | `detail`        |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- | --------------- |
-| `best_duet`         | coppia (persona, partner del duetto) con più interazioni; tra le due metà si tiene il conteggio più alto; a parità la coppia alfabeticamente prima. Sempre due vincitori | interazioni             | —               |
-| `night_shift`       | `latest_night_commit` più vicino alle 04:00                                                                                                                              | minuti dalla mezzanotte | orario `HH:MM`  |
-| `pipeline_phoenix`  | `pipelines.recoveries` più alto (> 0): pipeline `success` subito dopo una `failed` sullo stesso progetto e ref (`contracts-v2`)                                          | rinascite               | —               |
-| `emoji_of_the_year` | emoji con più usi sommando i `topGiven` del team; vince chi l'ha usata di più                                                                                            | usi del vincitore       | nome dell'emoji |
-| `marathon_mr`       | massimo tra `longest_mr` e `ghostMrs.oldestDays`                                                                                                                         | giorni                  | —               |
-| `hemingway`         | `commitMessages.shortest` più corto (non vuoto)                                                                                                                          | caratteri               | il messaggio    |
-| `tolstoy`           | `commitMessages.longestLength` più alto                                                                                                                                  | caratteri               | —               |
-| `golden_broom`      | rapporto righe cancellate / aggiunte più alto (min 500 righe cambiate, almeno una cancellata)                                                                            | rapporto (2 dec.)       | —               |
-| `friday_courage`    | `fridayDeploys.count` più alto (> 0)                                                                                                                                     | deploy                  | —               |
-| `first_light`       | momento epico `earliest_morning_commit` più presto (commit tra 05:00 e 11:59, al minuto; `contracts-v2`)                                                                 | minuti dalla mezzanotte | orario `HH:MM`  |

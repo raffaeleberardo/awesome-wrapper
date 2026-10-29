@@ -40,7 +40,7 @@ Aggiungi titolo e descrizione del badge in `packages/copy`. Il catalogo dei test
 
 ## 4. Profilo demo: `packages/fixtures`
 
-Modifica i dati demo in `packages/fixtures` in modo che **almeno una persona del team finto** riceva il badge. Serve perché la modalità demo mostri tutti i badge, anche senza GitLab.
+Modifica i dati demo in `packages/fixtures` in modo che **almeno una persona del team finto** riceva il badge. Serve perché i dati finti coprano tutti i badge, anche senza GitLab: il test `packages/stats/test/demo.test.ts` lo verifica su tutto il team finto, anche se la modalità demo mostra il wrapped di un solo membro fisso.
 
 Se il dataset demo è generato con un seed fisso, la modifica deve restare riproducibile: rigenera i dati con lo script del pacchetto, non a mano.
 

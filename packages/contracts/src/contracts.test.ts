@@ -6,9 +6,8 @@ import {
   calendarStatsSchema,
   copyCatalogSchema,
   healthResponseSchema,
-  membersResponseSchema,
+  meResponseSchema,
   rawActivitySchema,
-  teamAwardsSchema,
   wrappedStatsSchema,
   yearQuerySchema,
 } from './index';
@@ -18,11 +17,10 @@ describe('esempi dei contratti', () => {
   it.each([
     ['RawActivity', rawActivitySchema, ex.exampleRawActivity],
     ['WrappedStats', wrappedStatsSchema, ex.exampleWrappedStats],
-    ['TeamAwards', teamAwardsSchema, ex.exampleTeamAwards],
     ['CalendarEvent', calendarEventSchema, ex.exampleCalendarEvent],
     ['CalendarStats', calendarStatsSchema, ex.exampleCalendarStats],
     ['HealthResponse', healthResponseSchema, ex.exampleHealthResponse],
-    ['MembersResponse', membersResponseSchema, ex.exampleMembersResponse],
+    ['MeResponse', meResponseSchema, ex.exampleWrappedStats],
     ['ApiError', apiErrorSchema, ex.exampleApiError],
   ] as const)('%s è valido', (_name, schema, value) => {
     expect(schema.safeParse(value).success).toBe(true);
@@ -42,6 +40,12 @@ describe('regole dei contratti', () => {
     expect(result.success).toBe(false);
   });
 
+  it('ammette i codici di errore del token', () => {
+    for (const code of ['unauthorized', 'bot_token'] as const) {
+      expect(apiErrorSchema.safeParse({ error: { code, message: 'x' } }).success).toBe(true);
+    }
+  });
+
   it('converte la query year', () => {
     expect(yearQuerySchema.parse({ year: '2026' })).toEqual({ year: 2026 });
     expect(yearQuerySchema.parse({})).toEqual({});
@@ -49,7 +53,8 @@ describe('regole dei contratti', () => {
   });
 
   it('costruisce i percorsi API', () => {
-    expect(apiPaths.wrapped('giulia.ferri', 2026)).toBe('/api/wrapped/giulia.ferri?year=2026');
-    expect(apiPaths.team()).toBe('/api/team');
+    expect(apiPaths.health()).toBe('/api/health');
+    expect(apiPaths.me()).toBe('/api/me');
+    expect(apiPaths.me(2026)).toBe('/api/me?year=2026');
   });
 });

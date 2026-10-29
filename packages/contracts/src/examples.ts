@@ -3,9 +3,7 @@ import type {
   CalendarEvent,
   CalendarStats,
   HealthResponse,
-  MembersResponse,
   RawActivity,
-  TeamAwards,
   WrappedStats,
 } from './index';
 
@@ -261,30 +259,6 @@ export const exampleWrappedStats: WrappedStats = {
   horoscopeSeed: 2840193771,
 };
 
-export const exampleTeamAwards: TeamAwards = {
-  schemaVersion: 1,
-  year: 2026,
-  teamSize: 8,
-  awards: [
-    {
-      id: 'best_duet',
-      winners: [
-        { username: 'giulia.ferri', displayName: 'Giulia Ferri' },
-        { username: 'marco.vitale', displayName: 'Marco Vitale' },
-      ],
-      value: 214,
-      detail: null,
-    },
-    {
-      id: 'emoji_of_the_year',
-      winners: [{ username: 'giulia.ferri', displayName: 'Giulia Ferri' }],
-      value: 90,
-      detail: 'tada',
-    },
-  ],
-  teamTotals: { commits: 4210, mergeRequestsMerged: 512, pipelines: 7311, emojiGiven: 1904 },
-};
-
 export const exampleCalendarEvent: CalendarEvent = {
   start: '2026-04-17T15:00:00+02:00',
   end: '2026-04-17T16:30:00+02:00',
@@ -320,17 +294,12 @@ export const exampleHealthResponse: HealthResponse = {
   status: 'ok',
   demoMode: true,
   year: 2026,
-  contractsVersion: 2,
-};
-
-export const exampleMembersResponse: MembersResponse = {
-  year: 2026,
-  members: [
-    { username: 'giulia.ferri', displayName: 'Giulia Ferri' },
-    { username: 'marco.vitale', displayName: 'Marco Vitale' },
-  ],
+  contractsVersion: 3,
 };
 
 export const exampleApiError: ApiError = {
-  error: { code: 'not_found', message: 'Questa persona non fa parte del gruppo.' },
+  error: {
+    code: 'bot_token',
+    message: 'Questo token appartiene a un bot: serve un Personal Access Token personale.',
+  },
 };

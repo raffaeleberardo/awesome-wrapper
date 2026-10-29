@@ -1,13 +1,13 @@
 # Architettura
 
-Git Wrapped ha due container e un servizio esterno. Il confine della privacy è netto: il calendario si elabora nel browser, mentre i dati GitLab passano solo in memoria dentro il container `api`.
+Git Wrapped ha due container e un servizio esterno. Ognuno lo avvia in locale con il proprio Personal Access Token, e l'app mostra solo il wrapped del proprietario del token. Il confine della privacy è netto: il calendario si elabora nel browser, mentre i dati GitLab passano solo in memoria dentro il container `api`.
 
 ## Diagramma
 
 ```mermaid
 flowchart LR
     subgraph Browser
-        SPA["SPA React<br/>storie, card, premi"]
+        SPA["SPA React<br/>storie, card"]
         Worker["Web Worker<br/>calendario .ics (ical.js)"]
         Engine1["packages/stats<br/>(calendario)"]
         SPA --> Worker
@@ -27,7 +27,7 @@ flowchart LR
 
     SPA -- "HTTP /api/*" --> Web
     Web -- "reverse proxy /api" --> API
-    API -- "API GitLab, token read_api" --> GitLab
+    API -- "API GitLab, Personal Access Token read_api" --> GitLab
 ```
 
 Il file `.ics` non compare nel flusso verso il server: viene letto dal Web Worker, che non fa richieste di rete, e le statistiche restano nel browser.
@@ -39,24 +39,24 @@ Caddy serve anche la SPA, con header di sicurezza e CSP `connect-src 'self'`. La
 | Pacchetto            | Ruolo                                                                                                                                                                                                               |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/api`           | Server Fastify. Espone le rotte, valida le richieste e le risposte con i contratti, tiene la cache in memoria, redige i log. Il collettore GitLab sta in `src/gitlab`, il confine con il server in `src/source.ts`. |
-| `apps/web`           | SPA React. Storie a schermo intero (`story`), card ed export PNG (`cards`), pagina dei premi (`team`), modulo calendario (`calendar`, con il Web Worker), tema (`theme`).                                           |
-| `packages/contracts` | Schemi zod e tipi TypeScript condivisi: `RawActivity`, `WrappedStats`, `TeamAwards`, `CalendarStats`, cataloghi di badge, personalità e premi, rotte API. Congelato al tag `contracts-v1`.                          |
+| `apps/web`           | SPA React. Storie a schermo intero (`story`), card ed export PNG (`cards`), modulo calendario (`calendar`, con il Web Worker), tema (`theme`).                                                                      |
+| `packages/contracts` | Schemi zod e tipi TypeScript condivisi: `RawActivity`, `WrappedStats`, `CalendarStats`, cataloghi di badge e personalità, rotte API. Congelato al tag `contracts-v3`.                                               |
 | `packages/stats`     | Motore statistiche e badge, funzioni pure senza I/O. Gira nel server (statistiche GitLab) e nel browser (calendario).                                                                                               |
 | `packages/copy`      | Tutti i testi in italiano, indicizzati dalle chiavi dei contratti.                                                                                                                                                  |
-| `packages/fixtures`  | Team finto, un anno di attività generato con seed fisso, file `.ics` di esempio. Usato dalla modalità demo e dai test.                                                                                              |
+| `packages/fixtures`  | Team finto, un anno di attività generato con seed fisso, file `.ics` di esempio. Usato dalla modalità demo (che mostra un membro fisso) e dai test.                                                                 |
 | `docker/`            | Dockerfile multi-stage per `api` e `web`, Caddyfile.                                                                                                                                                                |
 | `e2e/`               | Test end-to-end con Playwright sul percorso completo in modalità demo.                                                                                                                                              |
 
 Lo stesso motore `packages/stats` è importato sia dal server sia dal browser. Il server non usa il calendario e il browser non chiama GitLab.
 
-## Flusso di una richiesta `GET /api/wrapped/:username`
+## Flusso di una richiesta `GET /api/me`
 
-1. Il browser chiede `/api/wrapped/:username?year=...`. La richiesta arriva a Caddy (`web`), che la inoltra ad `api`.
-2. Fastify valida i parametri con gli schemi dei contratti. Un input non valido riceve un `ApiError` con `code: bad_request`.
-3. L'API verifica che lo username sia un membro del gruppo. Se non lo è, risponde `404` con `code: not_found`.
+1. Il browser chiede `/api/me?year=...`. La richiesta arriva a Caddy (`web`), che la inoltra ad `api`.
+2. Fastify valida la query con gli schemi dei contratti. Un input non valido riceve un `ApiError` con `code: bad_request`.
+3. L'API chiede a GitLab a chi appartiene il token (`GET /user`). Un token mancante, scaduto o revocato riceve `401` con `code: unauthorized`; un token di un bot (Group o Project Access Token) riceve `403` con `code: bot_token`. In modalità demo la persona è un membro fisso del team finto.
 4. Se la cache ha già le statistiche di quella persona per l'anno, le restituisce.
-5. Altrimenti il collettore (`src/gitlab`, o la sorgente demo in modalità demo) scarica i dati e produce un `RawActivity`, paginando le risposte e gestendo i limiti di frequenza con retry.
-6. `computeWrappedStats` di `packages/stats` trasforma il `RawActivity` in `WrappedStats`.
+5. Altrimenti il collettore (`src/gitlab`, o la sorgente demo in modalità demo) scarica i dati e produce un `RawActivity`, paginando le risposte e gestendo i limiti di frequenza con retry. Se la persona non ha attività leggibili nei gruppi letti, l'API risponde `404` con `code: not_found`.
+6. `computeWrappedStats` di `packages/stats` trasforma il `RawActivity` in `WrappedStats`. L'elenco dei membri dei gruppi serve solo a dare un nome al partner del duetto e non viene esposto.
 7. La risposta viene validata con il contratto, salvata in cache per `CACHE_TTL_MINUTES` e restituita al browser.
 8. In caso di errore, il server risponde con un `ApiError` il cui messaggio non contiene dati personali.
 
