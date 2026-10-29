@@ -17,3 +17,9 @@ Formato:
 Per evitare conflitti di merge, ogni agente aggiunge le proprie voci in fondo al file.
 
 ---
+
+## A2 — `zod` come dipendenza di `apps/api`
+
+- **Cosa**: aggiungere `zod` (stessa versione di `packages/contracts`, `^4.6.7`) alle `dependencies` di `apps/api/package.json`.
+- **Perché**: il brief chiede di validare la configurazione con zod, ma con pnpm `zod` non è risolvibile da `apps/api` (è dipendenza solo di `packages/contracts`) e il contratto non lo riesporta.
+- **Stub adottato nel frattempo**: `apps/api/src/config.ts` valida le variabili a mano (stessi vincoli e stessi messaggi chiari). Si può sostituire con uno schema zod senza cambiare l'interfaccia `loadConfig`.
