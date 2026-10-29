@@ -7,7 +7,7 @@ export const cards: CopyCatalog['cards'] = {
   top_files: { title: 'I file del cuore', subtitle: 'Quelli che hai aperto più spesso.' },
   languages: { title: 'Le tue lingue', subtitle: 'Quante ne parli, e quanto spesso.' },
   hours: { title: 'Il tuo orologio', subtitle: 'Quando il tuo codice prende vita.' },
-  streak: { title: 'La serie d’oro', subtitle: '{value} giorni di fila con almeno un commit.' },
+  streak: { title: 'La serie d’oro', subtitle: 'Giorni di fila con almeno un commit: {value}.' },
   duet: { title: 'Il tuo duetto', subtitle: 'La collega o il collega con cui scambi più review.' },
   emoji: { title: 'Pioggia di emoji', subtitle: 'Quelle date e quelle ricevute.' },
   commit_messages: {
@@ -16,9 +16,9 @@ export const cards: CopyCatalog['cards'] = {
   },
   pipeline_graveyard: {
     title: 'Il cimitero delle pipeline',
-    subtitle: '{value} rosse, ognuna con la sua lapide.',
+    subtitle: 'Pipeline rosse: {value}. Ognuna ha la sua lapide.',
   },
-  ghost_mrs: { title: 'MR fantasma', subtitle: '{value} anime in pena aspettano un merge.' },
+  ghost_mrs: { title: 'MR fantasma', subtitle: 'Anime in pena in attesa di un merge: {value}.' },
   friday_deploys: {
     title: 'Venerdì di fuoco',
     subtitle: '{value} deploy nel pomeriggio del destino.',
@@ -26,7 +26,7 @@ export const cards: CopyCatalog['cards'] = {
   calendar: { title: 'Il tuo calendario', subtitle: 'Tra riunioni e codice, il tuo {year}.' },
   badges: {
     title: 'I tuoi badge',
-    subtitle: '{value} riconoscimenti, tutti conquistati sul campo.',
+    subtitle: 'Riconoscimenti conquistati sul campo: {value}.',
   },
   personality: {
     title: 'La tua personalità',
